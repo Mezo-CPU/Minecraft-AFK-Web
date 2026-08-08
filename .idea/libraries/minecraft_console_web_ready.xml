@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="minecraft-console-web-ready">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/minecraft-console-web-ready.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
