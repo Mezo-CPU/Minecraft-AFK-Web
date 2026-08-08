@@ -1,0 +1,15 @@
+{
+  "name": "minecraft-console-backend",
+  "version": "1.0.0",
+  "description": "Always-on Minecraft bot backend (mineflayer + Microsoft auth), talks to the web dashboard over WebSocket.",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "mineflayer": "^4.33.0",
+    "mineflayer-pathfinder": "^2.4.5",
+    "prismarine-auth": "^2.7.0",
+    "ws": "^8.18.0"
+  }
+}

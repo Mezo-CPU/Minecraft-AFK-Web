@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Private S.O.R Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rust:    #c1440e;
+    --terra:   #d4601a;
+    --peach:   #e8895a;
+    --sand:    #f2cba8;
+    --dark:    #100a04;
+    --warm:    #1a1008;
+    --panel:   #221508;
+    --mid:     #2e1c0c;
+    --rim:     #3a2210;
+    --dim:     #6a4828;
+    --smoke:   #9a7050;
+    --glow:    rgba(193,68,14,0.35);
+    --border:  rgba(193,68,14,0.22);
+    --bordhi:  rgba(212,96,26,0.5);
+  }
+
+  /* ══════════════════════════════════════════════════
+     THEMES — applied to :root via data-theme attribute
+  ══════════════════════════════════════════════════ */
+
+  /* ── Ember (default, rust/terracotta) ── */
+  :root, [data-theme="ember"] {
+    --rust:    #c1440e;
+    --terra:   #d4601a;
+    --peach:   #e8895a;
+    --sand:    #f2cba8;
+    --dark:    #100a04;
+    --warm:    #1a1008;
+    --panel:   #221508;
+    --mid:     #2e1c0c;
+    --rim:     #3a2210;
+    --dim:     #6a4828;
+    --smoke:   #9a7050;
+    --glow:    rgba(193,68,14,0.35);
+    --border:  rgba(193,68,14,0.22);
+    --bordhi:  rgba(212,96,26,0.5);
+    --bg-grad1: rgba(193,68,14,0.07);
+    --bg-grad2: rgba(232,137,90,0.04);
+  }
+
+  /* ── Void (deep navy / electric blue) ── */
+  [data-theme="void"] {
+    --rust:    #1a6fff;
+    --terra:   #3d8eff;
+    --peach:   #6db0ff;
+    --sand:    #c0d8ff;
+    --dark:    #03060f;
+    --warm:    #060d1a;
+    --panel:   #0a1426;
+    --mid:     #0e1d36;
+    --rim:     #152844;
+    --dim:     #2a4a7a;
+    --smoke:   #4a7aaa;
+    --glow:    rgba(26,111,255,0.35);
+    --border:  rgba(26,111,255,0.22);
+    --bordhi:  rgba(61,142,255,0.5);
+    --bg-grad1: rgba(26,111,255,0.07);
+    --bg-grad2: rgba(109,176,255,0.04);
+  }
+
+  /* ── Matrix (black / acid green) ── */
+  [data-theme="matrix"] {
+    --rust:    #00c040;
+    --terra:   #00e050;
+    --peach:   #40ff80;
+    --sand:    #a0ffb8;
+    --dark:    #010805;
+    --warm:    #020f08;
+    --panel:   #04180c;
+    --mid:     #061f10;
+    --rim:     #0a2e16;
+    --dim:     #165228;
+    --smoke:   #2a8044;
+    --glow:    rgba(0,192,64,0.35);
+    --border:  rgba(0,192,64,0.22);
+    --bordhi:  rgba(0,224,80,0.5);
+    --bg-grad1: rgba(0,192,64,0.07);
+    --bg-grad2: rgba(64,255,128,0.04);
+  }
+
+  /* ── Arctic (charcoal / icy cyan) ── */
+  [data-theme="arctic"] {
+    --rust:    #00aec8;
+    --terra:   #00c8e0;
+    --peach:   #40dff0;
+    --sand:    #b8f4fa;
+    --dark:    #020e10;
+    --warm:    #06181c;
+    --panel:   #0a2228;
+    --mid:     #0e2c34;
+    --rim:     #143a44;
+    --dim:     #1e606e;
+    --smoke:   #3a9aaa;
+    --glow:    rgba(0,174,200,0.35);
+    --border:  rgba(0,174,200,0.22);
+    --bordhi:  rgba(0,200,224,0.5);
+    --bg-grad1: rgba(0,174,200,0.07);
+    --bg-grad2: rgba(64,223,240,0.04);
+  }
+
+  /* ── Amethyst (dark purple / violet) ── */
+  [data-theme="amethyst"] {
+    --rust:    #8b3fc8;
+    --terra:   #a655e0;
+    --peach:   #c080ff;
+    --sand:    #e0c8ff;
+    --dark:    #080410;
+    --warm:    #100818;
+    --panel:   #180c26;
+    --mid:     #201030;
+    --rim:     #2c1640;
+    --dim:     #4a2870;
+    --smoke:   #7050a0;
+    --glow:    rgba(139,63,200,0.35);
+    --border:  rgba(139,63,200,0.22);
+    --bordhi:  rgba(166,85,224,0.5);
+    --bg-grad1: rgba(139,63,200,0.07);
+    --bg-grad2: rgba(192,128,255,0.04);
+  }
+
+  /* ── Sunset (deep charcoal / golden amber) ── */
+  [data-theme="sunset"] {
+    --rust:    #c89010;
+    --terra:   #e0aa20;
+    --peach:   #f0c840;
+    --sand:    #fae8a0;
+    --dark:    #100c02;
+    --warm:    #1a1404;
+    --panel:   #221a06;
+    --mid:     #2e2408;
+    --rim:     #3a2e0c;
+    --dim:     #6a5018;
+    --smoke:   #9a7828;
+    --glow:    rgba(200,144,16,0.35);
+    --border:  rgba(200,144,16,0.22);
+    --bordhi:  rgba(224,170,32,0.5);
+    --bg-grad1: rgba(200,144,16,0.07);
+    --bg-grad2: rgba(240,200,64,0.04);
+  }
+
+  /* Theme card styles */
+  .theme-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .theme-card {
+    border-radius: 10px;
+    padding: 10px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all .2s;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+  .theme-card:hover { transform: translateY(-2px); }
+  .theme-card.active { border-color: var(--terra) !important; box-shadow: 0 0 14px var(--glow); }
+  .theme-card-swatches { display: flex; gap: 3px; }
+  .theme-card-swatch { width: 12px; height: 12px; border-radius: 3px; }
+  .theme-card-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .theme-check {
+    position: absolute;
+    top: 6px; right: 8px;
+    font-size: 11px;
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .theme-card.active .theme-check { opacity: 1; }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  /* Kill browser-default red :invalid borders and blue :focus outlines globally */
+  input, textarea, select {
+    outline: none !important;
+    box-shadow: none;
+  }
+  input:invalid, textarea:invalid, select:invalid {
+    border-color: var(--border) !important;
+    box-shadow: none !important;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--bordhi) !important;
+    box-shadow: 0 0 8px var(--glow) !important;
+  }
+
+  html, body {
+    height: 100%; overflow: hidden;
+    font-family: 'Fira Code', monospace;
+    background: var(--dark);
+    color: var(--sand);
+    padding: 12px 12px 0 12px;
+    background-image:
+      radial-gradient(circle 500px at 80% 10%, var(--bg-grad1) 0%, transparent 60%),
+      radial-gradient(circle 350px at 5%  85%, var(--bg-grad2) 0%, transparent 50%);
+  }
+
+  /* ══════════════════════════════════════════════════
+     ROOT GRID
+  ══════════════════════════════════════════════════ */
+  .root {
+    display: grid;
+    grid-template-rows: 58px 1fr;
+    height: calc(100vh - 12px);
+    gap: 10px;
+  }
+
+  /* ══════════════════════════════════════════════════
+     HEADER
+  ══════════════════════════════════════════════════ */
+  .header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(232,137,90,0.06);
+    flex-shrink: 0;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .hdr-logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--terra);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+  }
+  .hdr-logo-badge {
+    position: relative;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    animation: spin-head 8s linear infinite;
+  }
+  @keyframes spin-head {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  .hdr-logo-badge::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: conic-gradient(var(--rust), var(--terra), var(--peach), var(--terra), var(--rust));
+    border-radius: 50%;
+    animation: spin-head 3s linear infinite reverse;
+    opacity: 0.6;
+    filter: blur(3px);
+  }
+  .hdr-logo-badge img {
+    position: relative; z-index: 1;
+    width: 34px; height: 34px;
+    image-rendering: pixelated;
+    border-radius: 6px;
+    box-shadow: 0 0 10px rgba(193,68,14,0.6);
+  }
+
+  .hdr-stats {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .hdr-stat { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .hdr-stat-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--dim); }
+  .hdr-stat-val   { font-size: 12px; color: var(--peach); }
+
+  .hdr-bars { display:flex; gap:14px; align-items:center; }
+  .bar-group { display:flex; flex-direction:column; gap:4px; min-width: 88px; }
+  .bar-group-label { font-size: 9px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; display:flex; justify-content:space-between; }
+  .bar-group-label span { color: var(--peach); }
+  .bar-track { height:5px; background:rgba(0,0,0,0.5); border-radius:3px; overflow:hidden; }
+  .bar-fill  { height:100%; border-radius:3px; transition:width .5s; }
+  .bar-fill.hp   { background: linear-gradient(90deg, var(--rust), var(--terra)); box-shadow:0 0 4px var(--rust); }
+  .bar-fill.food { background: linear-gradient(90deg, var(--terra), var(--peach)); box-shadow:0 0 4px var(--terra); }
+
+  /* ══════════════════════════════════════════════════
+     MIDDLE
+  ══════════════════════════════════════════════════ */
+  .middle {
+    display: grid;
+    grid-template-columns: 74px 1fr 234px;
+    gap: 10px;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  /* Responsive: collapse right sidebar at narrow widths */
+  @media (max-width: 700px) {
+    .middle { grid-template-columns: 60px 1fr; }
+    .sidebar-right { display: none; }
+  }
+
+  /* ── BOT RAIL ─────────────────────────────── */
+  .bot-rail {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 0;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .bot-rail::-webkit-scrollbar { display: none; }
+
+  /* account-icon: renderer.js sets class="account-icon [active] [selected]" */
+  .account-icon {
+    width: 54px; height: 54px;
+    background: var(--mid);
+    border: 2px solid var(--border);
+    border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all .2s;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .account-icon::before {
+    content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent);
+    transform: rotate(45deg); transition: all .5s ease;
+  }
+  .account-icon:hover::before { left:100%; }
+  .account-icon:hover {
+    border-color: var(--bordhi);
+    background: rgba(193,68,14,0.1);
+    box-shadow: 0 0 14px rgba(193,68,14,0.22);
+  }
+  .account-icon.active {
+    border-color: var(--terra);
+    background: rgba(193,68,14,0.14);
+    box-shadow: 0 0 18px rgba(193,68,14,0.3);
+  }
+  .account-icon.selected {
+    border-color: var(--peach);
+    box-shadow: 0 0 12px rgba(232,137,90,0.3);
+  }
+  .account-icon img {
+    width: 42px; height: 42px;
+    image-rendering: pixelated;
+    border-radius: 9px;
+  }
+
+  /* status dot */
+  .status-dot {
+    position: absolute; bottom: 4px; right: 4px;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    border: 2px solid var(--dark);
+  }
+  .status-online        { background: var(--terra); box-shadow: 0 0 6px var(--terra); }
+  .status-offline       { background: var(--rim); }
+  .status-connecting    { background: #e8a020; animation: pulse-dot 1s infinite; }
+  .status-reconnecting  { background: #e8a020; animation: pulse-dot 0.6s infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* add-account: renderer.js looks for #addAccountBtn inside .add-account */
+  .add-account {
+    width: 54px; height: 40px;
+    border: 1.5px dashed rgba(193,68,14,0.28);
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    color: rgba(193,68,14,0.32);
+    cursor: pointer;
+    transition: all .2s;
+    flex-shrink: 0;
+  }
+  .add-account:hover { border-color: var(--terra); color: var(--terra); }
+
+  /* ── CONSOLE AREA ─────────────────────────── */
+  .console-area {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    min-height: 0;
+  }
+
+  /* Tab bar — tabs.js builds this as #tabBar */
+  #tabBar {
+    display: flex !important;
+    gap: 0 !important;
+    background: var(--warm) !important;
+    border-bottom: 1px solid var(--border) !important;
+    padding: 0 14px !important;
+    flex-shrink: 0;
+  }
+
+  /* Override tabs.js inline button styles via specificity */
+  #tabBar .tab-btn {
+    background: transparent !important;
+    color: var(--dim) !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    padding: 9px 16px !important;
+    cursor: pointer;
+    border-radius: 0 !important;
+    font-size: 11px !important;
+    font-family: 'Syne', sans-serif !important;
+    font-weight: 600 !important;
+    letter-spacing: .5px !important;
+    text-transform: uppercase !important;
+    transition: color .15s, border-color .15s !important;
+  }
+  #tabBar .tab-btn:hover {
+    color: var(--peach) !important;
+  }
+  /* active state is set via inline style by tabs.js — override */
+  #tabBar .tab-btn[style*="color: rgb(167, 139, 250)"],
+  #tabBar .tab-btn[style*="color:#a78bfa"],
+  #tabBar .tab-btn[style*="border-color: rgb(167, 139, 250)"] {
+    color: var(--terra) !important;
+    border-bottom-color: var(--terra) !important;
+    background: transparent !important;
+  }
+
+  /* Settings tab button (added by us, not tabs.js) */
+  #tab-btn-settings {
+    background: transparent;
+    color: var(--dim);
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 9px 16px;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    transition: color .15s, border-color .15s;
+  }
+  #tab-btn-settings:hover { color: var(--peach); }
+  #tab-btn-settings.active-settings { color: var(--terra); border-bottom-color: var(--terra); }
+
+  /* Console log (tabs.js moves the #console div in here) */
+  .console {
+    flex: 1;
+    padding: 14px 18px;
+    overflow-y: auto;
+    font-size: 12px;
+    line-height: 1.75;
+    min-height: 0;
+    background:
+      radial-gradient(ellipse 600px 300px at 40% 50%, rgba(193,68,14,0.08) 0%, transparent 55%),
+      var(--dark);
+  }
+  .console::-webkit-scrollbar { width: 4px; }
+  .console::-webkit-scrollbar-thumb { background: var(--rust); border-radius: 4px; }
+
+  .console-line {
+    margin-bottom: 3px;
+    padding: 2px 0 2px 8px;
+    border-left: 2px solid transparent;
+    border-radius: 3px;
+    transition: border-color .15s, background .15s;
+  }
+  .console-line:hover {
+    border-left-color: var(--terra);
+    background: rgba(193,68,14,0.04);
+  }
+
+  .timestamp   { color: var(--rim); font-size: 10px; margin-right: 6px; }
+  .log-info    { color: var(--smoke); }
+  .log-success { color: var(--terra); }
+  .log-warning { color: #e8a020; }
+  .log-error   { color: #d83020; }
+  .log-chat    { color: var(--peach); }
+  .log-command { color: var(--sand); }
+  .log-highlight { background: rgba(232,137,90,0.25); color: #ffcc66; border-radius: 2px; padding: 0 2px; font-weight: bold; }
+
+  /* Input area — tabs.js moves .input-area in here */
+  .input-area {
+    background: var(--warm);
+    border-top: 1px solid var(--border);
+    padding: 10px 14px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+    border-radius: 0 0 13px 13px;
+  }
+  .prompt {
+    color: var(--terra);
+    font-size: 15px;
+    text-shadow: 0 0 10px var(--glow);
+  }
+  .input-area input {
+    flex: 1;
+    background: rgba(0,0,0,0.28);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 14px;
+    color: var(--sand);
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color .2s;
+    caret-color: var(--terra);
+  }
+  .input-area input:focus { border-color: var(--bordhi); box-shadow: 0 0 10px rgba(193,68,14,0.18); }
+  .input-area input::placeholder { color: var(--rim); }
+  .input-area button {
+    background: linear-gradient(135deg, var(--rust), var(--terra));
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 9px 22px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all .2s;
+    box-shadow: 0 2px 10px rgba(193,68,14,0.28);
+  }
+  .input-area button:hover { box-shadow: 0 4px 16px rgba(193,68,14,0.5); transform: translateY(-1px); }
+
+  /* ── RIGHT PANEL ────────────────────────────── */
+  .sidebar-right {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+  .sidebar-right::-webkit-scrollbar { width: 4px; }
+  .sidebar-right::-webkit-scrollbar-thumb { background: var(--rust); border-radius: 4px; }
+
+  .r-card {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .r-card-head {
+    background: rgba(193,68,14,0.07);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 11px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--terra);
+    text-transform: uppercase;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .r-card-body { padding: 10px 11px; }
+
+  /* Status badges */
+  .status-badge {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 9px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: all .2s;
+    font-size: 11px;
+    color: var(--dim);
+  }
+  .status-badge:last-child { margin-bottom: 0; }
+  .status-badge:hover { border-color: var(--bordhi); color: var(--peach); }
+  .status-badge.active {
+    border-color: var(--bordhi);
+    background: var(--glow);
+    color: var(--peach);
+    box-shadow: 0 0 8px var(--glow);
+  }
+  .status-badge.inactive { opacity: 0.6; }
+
+  /* Hotbar */
+  .hotbar-display {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 5px;
+  }
+  .hotbar-slot {
+    aspect-ratio: 1;
+    background: var(--mid);
+    border: 1px solid rgba(193,68,14,0.12);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    position: relative; cursor: pointer;
+    transition: all .2s;
+  }
+  .hotbar-slot:hover { border-color: var(--bordhi); }
+  .hotbar-slot.selected {
+    border-color: var(--terra);
+    box-shadow: 0 0 8px rgba(193,68,14,0.3);
+    background: rgba(193,68,14,0.12);
+  }
+  .count { position:absolute; bottom:2px; right:4px; font-size:9px; color:var(--peach); }
+
+  /* Quick stats */
+  .stat-line {
+    display: flex; justify-content: space-between;
+    font-size: 11px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(193,68,14,0.06);
+    color: var(--smoke);
+  }
+  .stat-line:last-child { border-bottom: none; }
+  .stat-line span { color: var(--peach); }
+
+
+
+  /* ══════════════════════════════════════════════════
+     SETTINGS TAB PANEL (our custom panel)
+  ══════════════════════════════════════════════════ */
+  /* #tab-settings layout is set via inline styles in the switchTab patch below.
+     Only scrollbar appearance is managed here. */
+  #tab-settings::-webkit-scrollbar { width: 6px; }
+  #tab-settings::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+  #tab-settings::-webkit-scrollbar-thumb { background: var(--rust); border-radius: 4px; }
+  #tab-settings::-webkit-scrollbar-thumb:hover { background: var(--terra); }
+
+  .settings-section {
+    background: rgba(0,0,0,0.18);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    overflow: hidden;
+    min-width: 220px;
+    width: 100%;
+    flex: 1 1 260px;
+    box-sizing: border-box;
+  }
+  .settings-section-head {
+    background: var(--bg-grad1);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 14px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--terra);
+    text-transform: uppercase;
+  }
+  .settings-section-body {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  .settings-row-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .settings-row-label {
+    font-size: 12px;
+    color: var(--sand);
+    font-weight: 500;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .settings-row-desc {
+    font-size: 10px;
+    color: var(--dim);
+    margin-top: 2px;
+    display: block;
+    line-height: 1.4;
+    white-space: normal;
+  }
+
+  /* Toggle switch */
+  .toggle-wrap { flex-shrink: 0; }
+  .toggle {
+    position: relative;
+    width: 40px; height: 22px;
+    cursor: pointer;
+    display: block;
+  }
+  .toggle input { display: none; }
+  .toggle-track {
+    width: 40px; height: 22px;
+    background: var(--rim);
+    border-radius: 11px;
+    border: 1px solid var(--border);
+    transition: all .2s;
+    position: relative;
+  }
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--dim);
+    top: 2px; left: 2px;
+    transition: all .2s;
+  }
+  .toggle input:checked + .toggle-track {
+    background: rgba(193,68,14,0.25);
+    border-color: var(--terra);
+  }
+  .toggle input:checked + .toggle-track::after {
+    background: var(--terra);
+    left: 20px;
+    box-shadow: 0 0 6px var(--terra);
+  }
+
+  /* Number / text inputs in settings */
+  .settings-input {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: var(--sand);
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    width: 90px;
+    min-width: 60px;
+    outline: none;
+    text-align: right;
+    transition: border-color .2s;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+  .settings-input:focus { border-color: var(--bordhi); }
+
+  .settings-select {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: var(--sand);
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color .2s;
+    flex-shrink: 0;
+    max-width: 160px;
+    box-sizing: border-box;
+  }
+  .settings-select:focus { border-color: var(--bordhi); }
+
+  /* Full-width control rows (textareas, wide inputs) */
+  .settings-row.stacked {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .settings-row.stacked .settings-row-info {
+    width: 100%;
+  }
+  .settings-select.full, .settings-input.full {
+    max-width: 100%;
+    width: 100%;
+    text-align: left;
+  }
+
+  .settings-save-btn {
+    align-self: flex-start;
+    background: linear-gradient(135deg, var(--rust), var(--terra));
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    padding: 8px 20px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .2s;
+    box-shadow: 0 2px 10px rgba(193,68,14,0.25);
+  }
+  .settings-save-btn:hover { box-shadow: 0 4px 16px rgba(193,68,14,0.45); transform: translateY(-1px); }
+
+  /* ══════════════════════════════════════════════════
+     MODALS
+  ══════════════════════════════════════════════════ */
+  .modal {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 1000;
+    justify-content: center; align-items: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal.active { display: flex; }
+
+  .modal-content {
+    background: linear-gradient(135deg, var(--panel), var(--mid));
+    border: 1px solid var(--bordhi);
+    border-radius: 18px;
+    padding: 28px;
+    max-width: 460px; width: 90%;
+    box-shadow: 0 0 50px rgba(193,68,14,0.3);
+  }
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px; font-weight: 800;
+    margin-bottom: 20px;
+    color: var(--terra);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .modal label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 11px;
+    color: var(--smoke);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .modal input, .modal select {
+    width: 100%; padding: 9px 12px;
+    margin-bottom: 14px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--border);
+    color: var(--sand);
+    border-radius: 9px;
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .modal input:focus, .modal select:focus { border-color: var(--bordhi); }
+  .modal select option { background: var(--panel); }
+
+  .modal-buttons {
+    display: flex; gap: 9px; margin-top: 18px; flex-wrap: wrap;
+  }
+  .modal button {
+    flex: 1; padding: 9px 16px;
+    border: none; border-radius: 9px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    transition: all .2s;
+    min-width: 80px;
+  }
+  .btn-primary   { background: linear-gradient(135deg, var(--rust), var(--terra)); color: #fff; box-shadow: 0 2px 10px rgba(193,68,14,0.3); }
+  .btn-primary:hover { box-shadow: 0 4px 16px rgba(193,68,14,0.5); transform: translateY(-1px); }
+  .btn-secondary { background: rgba(255,255,255,0.05); color: var(--smoke); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: rgba(255,255,255,0.09); color: var(--sand); }
+  .btn-danger    { background: linear-gradient(135deg, #8a1a1a, #c12020); color: #fff; }
+  .btn-danger:hover { box-shadow: 0 4px 14px rgba(193,32,32,0.4); transform: translateY(-1px); }
+
+  /* ══════════════════════════════════════════════════
+     DIRECTION MODAL
+  ══════════════════════════════════════════════════ */
+  #directionModal .modal-inner {
+    background: linear-gradient(135deg, var(--panel), var(--mid));
+    border: 2px solid var(--bordhi);
+    border-radius: 18px;
+    padding: 22px; width: 280px;
+    box-shadow: 0 0 40px rgba(193,68,14,0.3);
+  }
+  .dpad-btn {
+    padding: 13px 0; border-radius: 10px;
+    border: 2px solid rgba(193,68,14,0.45);
+    background: rgba(0,0,0,0.4);
+    color: var(--peach); cursor: pointer;
+    font-size: 18px; font-family: inherit;
+    transition: all .1s;
+    box-shadow: 0 0 10px rgba(193,68,14,0.08);
+  }
+  .dpad-btn:active { background: rgba(193,68,14,0.18); transform: scale(0.96); }
+
+  /* ══════════════════════════════════════════════════
+     MOVEMENT MODAL
+  ══════════════════════════════════════════════════ */
+  #movementModal .modal-inner {
+    background: linear-gradient(135deg, var(--panel), var(--mid));
+    border: 2px solid var(--bordhi);
+    border-radius: 18px;
+    padding: 22px; width: 300px;
+    box-shadow: 0 0 40px rgba(193,68,14,0.3);
+  }
+  .move-key {
+    padding: 11px 0; border-radius: 10px;
+    border: 2px solid rgba(193,68,14,0.35);
+    background: rgba(0,0,0,0.4);
+    color: var(--smoke); cursor: pointer;
+    font-size: 13px; font-weight: bold;
+    font-family: 'Syne', sans-serif;
+    letter-spacing: .5px;
+    transition: all .1s;
+    user-select: none;
+  }
+  .move-key.held {
+    background: rgba(193,68,14,0.22);
+    border-color: var(--terra);
+    color: var(--peach);
+    box-shadow: 0 0 10px rgba(193,68,14,0.3);
+  }
+
+  /* ══════════════════════════════════════════════════
+     AUTO-CLICKER MODAL
+  ══════════════════════════════════════════════════ */
+  #clickerModal .modal-inner {
+    background: linear-gradient(135deg, var(--panel), var(--mid));
+    border: 1px solid var(--bordhi);
+    border-radius: 18px;
+    padding: 22px; width: 300px;
+    box-shadow: 0 0 40px rgba(193,68,14,0.3);
+  }
+  .tick-preset {
+    padding: 5px 10px; border-radius: 7px;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,0.4); color: var(--smoke);
+    cursor: pointer;
+    font-family: 'Fira Code', monospace; font-size: 11px;
+    transition: all .2s;
+  }
+  .tick-preset:hover, .tick-preset.active {
+    border-color: var(--terra); background: rgba(193,68,14,0.15); color: var(--sand);
+  }
+
+  /* ══════════════════════════════════════════════════
+     FOLLOW POPUP
+  ══════════════════════════════════════════════════ */
+  #followPopup {
+    display: none; position: fixed; inset: 0; z-index: 1100;
+    background: rgba(0,0,0,0.75); justify-content: center; align-items: center;
+    backdrop-filter: blur(4px);
+  }
+  #followPopup .fp-inner {
+    background: linear-gradient(135deg, var(--panel), var(--mid));
+    border: 2px solid var(--bordhi); border-radius: 18px;
+    padding: 22px; width: 280px;
+    box-shadow: 0 0 40px rgba(193,68,14,0.3);
+  }
+  #followPopup .fp-title {
+    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800;
+    color: var(--terra); letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  #followPopup input {
+    width: 100%; box-sizing: border-box; padding: 9px 12px; margin-bottom: 14px;
+    background: rgba(0,0,0,0.35); border: 1px solid var(--border);
+    color: var(--sand); border-radius: 9px;
+    font-family: 'Fira Code', monospace; font-size: 12px;
+    outline: none; transition: border-color .2s;
+  }
+  #followPopup input:focus   { border-color: var(--bordhi); }
+  #followPopup input::placeholder { color: var(--rim); }
+  #followPopup .fp-btns { display: flex; gap: 8px; }
+  #followPopup .fp-btns button {
+    flex: 1; padding: 9px; border-radius: 9px; border: none;
+    font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; transition: all .2s;
+  }
+
+  /* ══════════════════════════════════════════════════
+     GLOBAL SCROLLBAR
+  ══════════════════════════════════════════════════ */
+  ::-webkit-scrollbar       { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+  ::-webkit-scrollbar-thumb { background: var(--rust); border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--terra); }
+</style>
+</head>
+<body>
+<div class="root">
+
+  <!-- ══ HEADER ══════════════════════════════════════════ -->
+  <div class="header">
+    <div class="hdr-logo">
+      <div class="hdr-logo-badge">
+        <img src="https://minotar.net/avatar/lubrican/64" alt="Lubrican" onerror="this.src='https://mc-heads.net/avatar/lubrican/64'">
+      </div>
+      S.O.R Console
+    </div>
+
+    <div class="hdr-stats">
+      <div class="hdr-stat">
+        <span class="hdr-stat-label">Account</span>
+        <span class="hdr-stat-val" id="username">Offline</span>
+      </div>
+      <div class="hdr-stat">
+        <span class="hdr-stat-label">Position</span>
+        <span class="hdr-stat-val" id="coordinates">0, 0, 0</span>
+      </div>
+      <div class="hdr-stat">
+        <span class="hdr-stat-label">Mode</span>
+        <span class="hdr-stat-val" id="gameMode">—</span>
+      </div>
+      <div class="hdr-stat">
+        <span class="hdr-stat-label">Ping</span>
+        <span class="hdr-stat-val" id="pingDisplay">— ms</span>
+      </div>
+    </div>
+
+    <div class="hdr-bars">
+      <div class="bar-group">
+        <div class="bar-group-label">Health <span id="healthNum">0/20</span></div>
+        <div class="bar-track"><div class="bar-fill hp" id="healthBarFill" style="width:0%"></div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-group-label">Food <span id="hungerNum">0/20</span></div>
+        <div class="bar-track"><div class="bar-fill food" id="hungerBarFill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- Hidden spans: renderer.js writes emoji strings here; we read them to drive the bars -->
+    <span id="healthBar" style="display:none"></span>
+    <span id="hungerBar" style="display:none"></span>
+  </div>
+
+  <!-- ══ MIDDLE ══════════════════════════════════════════ -->
+  <div class="middle">
+
+    <!-- Bot Rail -->
+    <div class="bot-rail" id="accountList">
+      <!-- populated by renderer.js -->
+    </div>
+
+    <!-- Console Area — tabs.js inserts #tabBar + panels here -->
+    <div class="console-area">
+      <!-- Console log (moved into tab-console by tabs.js) -->
+      <div class="console" id="console">
+        <div class="console-line log-info">
+          <span class="timestamp"></span>Console initialised. Waiting for bot connection…
+        </div>
+      </div>
+      <!-- Input row (moved into tab-console by tabs.js) -->
+      <div class="input-area">
+        <span class="prompt" id="promptText">&gt;</span>
+        <input type="text" id="commandInput" placeholder="Enter command or message…" autocomplete="off">
+        <button onclick="sendCommand()">Send</button>
+      </div>
+	  
+
+      <!-- Settings tab panel (injected manually, not via tabs.js) -->
+      <div id="tab-settings">
+
+        <!-- ── Connection ─────────────────────────────── -->
+        <div class="settings-section">
+          <div class="settings-section-head">🔗 Connection</div>
+          <div class="settings-section-body">
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Auto-Reconnect</span>
+                <span class="settings-row-desc">Reconnect automatically after kick or disconnect</span>
+              </div>
+              <div class="toggle-wrap">
+                <label class="toggle"><input type="checkbox" id="setting-autoreconnect" checked><div class="toggle-track"></div></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Reconnect Delay (ms)</span>
+                <span class="settings-row-desc">Wait time before reconnecting</span>
+              </div>
+              <input type="number" class="settings-input" id="setting-reconnect-delay" value="5000" min="500" step="500">
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Max Reconnect Attempts</span>
+                <span class="settings-row-desc">0 = unlimited</span>
+              </div>
+              <input type="number" class="settings-input" id="setting-reconnect-max" value="0" min="0">
+            </div>
+            <div class="settings-row stacked">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Minecraft Version</span>
+                <span class="settings-row-desc">Protocol version sent on connect</span>
+              </div>
+              <select class="settings-select full" id="setting-mc-version">
+                <option value="1.21.1" selected>1.21.1</option>
+                <option value="1.21.4">1.21.4</option>
+                <option value="1.21">1.21</option>
+                <option value="1.20.4">1.20.4</option>
+                <option value="1.20.1">1.20.1</option>
+                <option value="1.19.4">1.19.4</option>
+                <option value="1.18.2">1.18.2</option>
+                <option value="1.17.1">1.17.1</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Bot Behaviour ──────────────────────────── -->
+        <div class="settings-section">
+          <div class="settings-section-head">🤖 Bot Behaviour</div>
+          <div class="settings-section-body">
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Auto-Respawn</span>
+                <span class="settings-row-desc">Click respawn automatically after death</span>
+              </div>
+              <div class="toggle-wrap">
+                <label class="toggle"><input type="checkbox" id="setting-autorespawn"><div class="toggle-track"></div></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Anti-AFK</span>
+                <span class="settings-row-desc">Periodic micro-movements to prevent AFK kick</span>
+              </div>
+              <div class="toggle-wrap">
+                <label class="toggle"><input type="checkbox" id="setting-antiafk"><div class="toggle-track"></div></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Anti-AFK Interval (ms)</span>
+                <span class="settings-row-desc">How often to perform the anti-AFK action</span>
+              </div>
+              <input type="number" class="settings-input" id="setting-antiafk-interval" value="30000" min="5000" step="1000">
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Auto-Eat</span>
+                <span class="settings-row-desc">Automatically eat food when hunger drops low</span>
+              </div>
+              <div class="toggle-wrap">
+                <label class="toggle"><input type="checkbox" id="setting-autoeat"><div class="toggle-track"></div></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Auto-Eat Threshold</span>
+                <span class="settings-row-desc">Eat when hunger falls at or below this value (0–20)</span>
+              </div>
+              <input type="number" class="settings-input" id="setting-autoeat-threshold" value="14" min="1" max="19">
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Health Disconnect</span>
+                <span class="settings-row-desc">Disconnect bot if health drops to or below this value (0 = off)</span>
+              </div>
+              <input type="number" class="settings-input" id="setting-health-disconnect" value="0" min="0" max="19">
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Console Display ────────────────────────── -->
+        <div class="settings-section">
+          <div class="settings-section-head">🖥️ Console Display</div>
+          <div class="settings-section-body">
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Show Timestamps</span>
+                <span class="settings-row-desc">Prefix each log line with the current time</span>
+              </div>
+              <div class="toggle-wrap">
+                <label class="toggle"><input type="checkbox" id="setting-timestamps" checked><div class="toggle-track"></div></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Max Log Lines</span>
+                <span class="settings-row-desc">Older entries pruned beyond this limit</span>
+              </div>
+              <input type="number" class="settings-input" id="setting-maxlines" value="500" min="100" step="100">
+            </div>
+            <div class="settings-row stacked">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Log Level</span>
+                <span class="settings-row-desc">Filter which message types appear in the console</span>
+              </div>
+              <select class="settings-select full" id="setting-loglevel">
+                <option value="all">All messages</option>
+                <option value="info">Info + above</option>
+                <option value="warn">Warnings + errors</option>
+                <option value="error">Errors only</option>
+              </select>
+            </div>
+            <div class="settings-row stacked">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Chat Highlight Keywords</span>
+                <span class="settings-row-desc">Comma-separated words to highlight in orange in the console (e.g. your IGN, "whisper", "$")</span>
+              </div>
+              <input type="text" class="settings-input full" id="setting-highlight-words" placeholder="Steve, $, whisper">
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Notifications ──────────────────────────── -->
+        <div class="settings-section">
+          <div class="settings-section-head">🔔 Notifications</div>
+          <div class="settings-section-body">
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Desktop Notifications</span>
+                <span class="settings-row-desc">Notify when a bot is kicked or dies</span>
+              </div>
+              <div class="toggle-wrap">
+                <label class="toggle"><input type="checkbox" id="setting-notifs"><div class="toggle-track"></div></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Notify on Chat Mention</span>
+                <span class="settings-row-desc">Alert when the bot's username appears in chat</span>
+              </div>
+              <div class="toggle-wrap">
+                <label class="toggle"><input type="checkbox" id="setting-mention-notif" checked><div class="toggle-track"></div></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Mention Sound Alert</span>
+                <span class="settings-row-desc">Play a sound when mentioned in chat</span>
+              </div>
+              <div class="toggle-wrap">
+                <label class="toggle"><input type="checkbox" id="setting-mention-sound" checked><div class="toggle-track"></div></label>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Notification Permission</span>
+                <span class="settings-row-desc" id="notif-permission-status">Status: checking…</span>
+              </div>
+              <button onclick="requestNotifPermission()" id="notif-permission-btn" style="
+                background:linear-gradient(135deg,var(--rust),var(--terra));color:#fff;border:none;
+                border-radius:8px;padding:6px 14px;font-family:'Syne',sans-serif;font-weight:700;
+                font-size:10px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;
+                white-space:nowrap;flex-shrink:0;transition:all .2s;">Grant</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Auto-TPA ───────────────────────────────── -->
+        <div class="settings-section">
+          <div class="settings-section-head">🚀 Auto TPA</div>
+          <div class="settings-section-body">
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Enable Auto-TPA</span>
+                <span class="settings-row-desc">Auto-run /tpaccept when a whitelisted player requests teleport</span>
+              </div>
+              <div class="toggle-wrap">
+                <label class="toggle"><input type="checkbox" id="autotpa-enabled" onchange="onAutoTpaToggle()"><div class="toggle-track"></div></label>
+              </div>
+            </div>
+            <div class="settings-row stacked">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Whitelisted Players</span>
+                <span class="settings-row-desc">One username per line — leave empty to accept from anyone</span>
+              </div>
+              <textarea id="autotpa-players" rows="5" placeholder="Steve&#10;Alex&#10;Notch"
+                oninput="onAutoTpaPlayersInput()"
+                style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.3);
+                  border:1px solid var(--border);border-radius:8px;padding:8px 10px;
+                  color:var(--sand);font-family:'Fira Code',monospace;font-size:12px;
+                  resize:vertical;outline:none;line-height:1.6;
+                  transition:border-color .2s;"></textarea>
+              <div id="autotpa-status" style="color:var(--dim);font-size:10px;min-height:14px;"></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button onclick="saveAutoTpaSettings()" id="autotpa-save-btn" class="settings-save-btn" style="align-self:auto;">💾 Save Auto-TPA</button>
+                <button onclick="reloadAutoTpaSettings()" style="
+                  background:rgba(0,0,0,0.25);color:var(--smoke);border:1px solid var(--border);
+                  border-radius:9px;padding:8px 16px;font-family:'Syne',sans-serif;font-weight:700;
+                  font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;
+                  transition:all .2s;">↺ Reload</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── APPEARANCE THEME PICKER ── -->
+        <div class="settings-section">
+          <div class="settings-section-head">🎨 Appearance</div>
+          <div class="settings-section-body">
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <span class="settings-row-label">Color Theme</span>
+                <span class="settings-row-desc">Choose the accent color palette for the entire interface. Saved automatically.</span>
+              </div>
+            </div>
+            <div class="theme-grid" id="themeGrid">
+
+              <!-- Ember -->
+              <div class="theme-card" id="theme-card-ember" onclick="applyTheme('ember')"
+                style="background:#221508;border-color:rgba(193,68,14,0.3);">
+                <div class="theme-card-swatches">
+                  <div class="theme-card-swatch" style="background:#c1440e;"></div>
+                  <div class="theme-card-swatch" style="background:#d4601a;"></div>
+                  <div class="theme-card-swatch" style="background:#e8895a;"></div>
+                  <div class="theme-card-swatch" style="background:#f2cba8;"></div>
+                </div>
+                <div class="theme-card-name" style="color:#d4601a;">🔥 Ember</div>
+                <span class="theme-check">✓</span>
+              </div>
+
+              <!-- Void -->
+              <div class="theme-card" id="theme-card-void" onclick="applyTheme('void')"
+                style="background:#0a1426;border-color:rgba(26,111,255,0.3);">
+                <div class="theme-card-swatches">
+                  <div class="theme-card-swatch" style="background:#1a6fff;"></div>
+                  <div class="theme-card-swatch" style="background:#3d8eff;"></div>
+                  <div class="theme-card-swatch" style="background:#6db0ff;"></div>
+                  <div class="theme-card-swatch" style="background:#c0d8ff;"></div>
+                </div>
+                <div class="theme-card-name" style="color:#3d8eff;">🌌 Void</div>
+                <span class="theme-check" style="color:#3d8eff;">✓</span>
+              </div>
+
+              <!-- Matrix -->
+              <div class="theme-card" id="theme-card-matrix" onclick="applyTheme('matrix')"
+                style="background:#04180c;border-color:rgba(0,192,64,0.3);">
+                <div class="theme-card-swatches">
+                  <div class="theme-card-swatch" style="background:#00c040;"></div>
+                  <div class="theme-card-swatch" style="background:#00e050;"></div>
+                  <div class="theme-card-swatch" style="background:#40ff80;"></div>
+                  <div class="theme-card-swatch" style="background:#a0ffb8;"></div>
+                </div>
+                <div class="theme-card-name" style="color:#00e050;">⬛ Matrix</div>
+                <span class="theme-check" style="color:#00e050;">✓</span>
+              </div>
+
+              <!-- Arctic -->
+              <div class="theme-card" id="theme-card-arctic" onclick="applyTheme('arctic')"
+                style="background:#0a2228;border-color:rgba(0,174,200,0.3);">
+                <div class="theme-card-swatches">
+                  <div class="theme-card-swatch" style="background:#00aec8;"></div>
+                  <div class="theme-card-swatch" style="background:#00c8e0;"></div>
+                  <div class="theme-card-swatch" style="background:#40dff0;"></div>
+                  <div class="theme-card-swatch" style="background:#b8f4fa;"></div>
+                </div>
+                <div class="theme-card-name" style="color:#00c8e0;">❄️ Arctic</div>
+                <span class="theme-check" style="color:#00c8e0;">✓</span>
+              </div>
+
+              <!-- Amethyst -->
+              <div class="theme-card" id="theme-card-amethyst" onclick="applyTheme('amethyst')"
+                style="background:#180c26;border-color:rgba(139,63,200,0.3);">
+                <div class="theme-card-swatches">
+                  <div class="theme-card-swatch" style="background:#8b3fc8;"></div>
+                  <div class="theme-card-swatch" style="background:#a655e0;"></div>
+                  <div class="theme-card-swatch" style="background:#c080ff;"></div>
+                  <div class="theme-card-swatch" style="background:#e0c8ff;"></div>
+                </div>
+                <div class="theme-card-name" style="color:#a655e0;">💜 Amethyst</div>
+                <span class="theme-check" style="color:#a655e0;">✓</span>
+              </div>
+
+              <!-- Sunset -->
+              <div class="theme-card" id="theme-card-sunset" onclick="applyTheme('sunset')"
+                style="background:#221a06;border-color:rgba(200,144,16,0.3);">
+                <div class="theme-card-swatches">
+                  <div class="theme-card-swatch" style="background:#c89010;"></div>
+                  <div class="theme-card-swatch" style="background:#e0aa20;"></div>
+                  <div class="theme-card-swatch" style="background:#f0c840;"></div>
+                  <div class="theme-card-swatch" style="background:#fae8a0;"></div>
+                </div>
+                <div class="theme-card-name" style="color:#e0aa20;">🌅 Sunset</div>
+                <span class="theme-check" style="color:#e0aa20;">✓</span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <button class="settings-save-btn" onclick="saveSettings()">💾 Save Settings</button>
+
+      </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="sidebar-right">
+
+      <div class="r-card">
+        <div class="r-card-head">⚙️ Bot Status</div>
+        <div class="r-card-body">
+          <div class="status-badge inactive" id="sneakStatus" onclick="toggleSneak()" style="cursor:pointer;">
+            <span>👟</span><span id="sneakText">Sneak</span>
+          </div>
+          <div class="status-badge inactive" id="followStatus" onclick="toggleFollowMenu()" style="cursor:pointer;">
+            <span>🏃</span><span id="followText">Follow</span>
+          </div>
+          <div class="status-badge inactive" id="clickStatus" onclick="toggleClickerMenu()" style="cursor:pointer;">
+            <span>🖱️</span><span id="clickText">Mouse Control</span>
+          </div>
+          <div class="status-badge inactive" id="directionStatus" onclick="toggleDirectionMenu()" style="cursor:pointer;">
+            <span>🧭</span><span>Direction</span>
+          </div>
+          <div class="status-badge inactive" id="movementStatus" onclick="toggleMovementMenu()" style="cursor:pointer;">
+            <span>🕹️</span><span>Movement</span>
+          </div>
+          <div class="status-badge inactive" id="excavateStatus" onclick="toggleExcavateModal()" style="cursor:pointer;">
+            <span>⛏</span><span id="excavateText">Excavate</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="r-card">
+        <div class="r-card-head">🎒 Quick Inventory</div>
+        <div class="r-card-body">
+          <div class="hotbar-display" id="hotbar">
+            <div class="hotbar-slot selected"></div>
+            <div class="hotbar-slot"></div>
+            <div class="hotbar-slot"></div>
+            <div class="hotbar-slot"></div>
+            <div class="hotbar-slot"></div>
+            <div class="hotbar-slot"></div>
+            <div class="hotbar-slot"></div>
+            <div class="hotbar-slot"></div>
+            <div class="hotbar-slot"></div>
+          </div>
+        </div>
+      </div>
+
+
+
+    </div>
+  </div>
+
+
+
+</div><!-- /.root -->
+
+
+<!-- ══════════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════════ -->
+
+<!-- Add Bot Modal -->
+<div class="modal" id="addAccountModal">
+  <div class="modal-content">
+    <div class="modal-title">Add Bot</div>
+    <div class="modal-buttons">
+      <button class="btn-primary"   onclick="showCreateAccountModal()">Authenticate Account</button>
+      <button class="btn-primary"   onclick="showCreateBotModal()">Create Bot</button>
+      <button class="btn-secondary" onclick="showManageAccountsModal()">Manage Accounts</button>
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Authenticate Microsoft Account Modal -->
+<div class="modal" id="createAccountModal">
+  <div class="modal-content">
+    <div class="modal-title">Authenticate Account</div>
+    <label>Account Identifier (any name):</label>
+    <input type="text" id="accountIdentifier" placeholder="e.g. MyMainAccount">
+    <div class="modal-buttons">
+      <button class="btn-primary"   id="createAcctBtn" onclick="createMicrosoftAccount()">Authenticate</button>
+      <button class="btn-secondary" id="cancelCreateAcctBtn" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Bot Modal -->
+<div class="modal" id="createBotModal">
+  <div class="modal-content">
+    <div class="modal-title">Create Bot</div>
+    <label>Bot Name:</label>
+    <input type="text" id="botName" placeholder="My Bot">
+    <label>Authenticated Account:</label>
+    <select id="botAccountSelect"></select>
+    <label>Server Address:</label>
+    <input type="text" id="botServerAddress" placeholder="localhost" value="localhost">
+    <label>Server Port:</label>
+    <input type="number" id="botServerPort" placeholder="25565" value="25565">
+    <div class="modal-buttons">
+      <button class="btn-primary"   onclick="createBot()">Create</button>
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bot Settings Modal -->
+<div class="modal" id="accountSettingsModal">
+  <div class="modal-content">
+    <div class="modal-title">Bot Settings</div>
+    <label>Bot Name:</label>
+    <input type="text" id="editAccountName" disabled>
+    <label>Account:</label>
+    <input type="text" id="editUsername" disabled>
+    <label>Server Address:</label>
+    <input type="text" id="editServerAddress">
+    <label>Server Port:</label>
+    <input type="number" id="editServerPort">
+    <div class="modal-buttons">
+      <button class="btn-primary"   onclick="saveBotSettings()">Save</button>
+      <button class="btn-danger"    onclick="deleteCurrentBot()">Delete Bot</button>
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Authenticated Accounts Modal -->
+<div class="modal" id="manageAccountsModal">
+  <div class="modal-content" style="min-width:340px;max-width:480px;">
+    <div class="modal-title">Manage Accounts</div>
+    <p style="font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.5;">
+      Deleting an account removes its stored Microsoft token and auth cache from disk.<br>
+      Any bots using that account will be disconnected first.
+    </p>
+    <div id="manageAccountsList" style="display:flex;flex-direction:column;gap:7px;max-height:280px;overflow-y:auto;margin-bottom:14px;"></div>
+    <div class="modal-buttons">
+      <button class="btn-secondary" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Direction Control Modal -->
+<div id="directionModal" style="
+    display:none; position:fixed; z-index:1000;
+    background:rgba(0,0,0,0.75); inset:0;
+    justify-content:center; align-items:center; backdrop-filter:blur(4px);"
+    onclick="if(event.target===this)closeDirectionMenu()">
+  <div class="modal-inner">
+    <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;margin-bottom:4px;
+        color:var(--terra);letter-spacing:1px;text-transform:uppercase;">
+        🧭 Direction Control
+    </div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:14px;">Hold to rotate — tap to step</div>
+
+    <div style="margin-bottom:12px;">
+      <label style="color:var(--smoke);font-size:11px;display:block;margin-bottom:4px;letter-spacing:.5px;text-transform:uppercase;">Pitch (up/down)</label>
+      <div style="background:rgba(0,0,0,0.4);border-radius:8px;height:8px;position:relative;border:1px solid var(--border);">
+        <div id="pitchBar" style="position:absolute;left:50%;top:0;height:100%;width:4px;background:var(--terra);border-radius:4px;transform:translateX(-50%);transition:left 0.1s;"></div>
+        <div id="pitchBarFill" style="position:absolute;height:100%;background:rgba(193,68,14,0.25);border-radius:8px;left:50%;width:0;transition:left 0.1s,width 0.1s;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:3px;">
+        <span style="color:var(--dim);font-size:10px;">Look up (−90°)</span>
+        <span id="pitchLabel" style="color:var(--peach);font-size:10px;font-weight:bold;">0°</span>
+        <span style="color:var(--dim);font-size:10px;">Look down (90°)</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label style="color:var(--smoke);font-size:11px;display:block;margin-bottom:4px;letter-spacing:.5px;text-transform:uppercase;">Yaw (left/right)</label>
+      <div style="background:rgba(0,0,0,0.4);border-radius:8px;height:8px;position:relative;border:1px solid var(--border);">
+        <div id="yawBar" style="position:absolute;left:50%;top:0;height:100%;width:4px;background:var(--terra);border-radius:4px;transform:translateX(-50%);transition:left 0.1s;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:3px;">
+        <span style="color:var(--dim);font-size:10px;">← West</span>
+        <span id="yawLabel" style="color:var(--peach);font-size:10px;font-weight:bold;">South</span>
+        <span style="color:var(--dim);font-size:10px;">East →</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px;">
+      <div></div>
+      <button id="dpad-up" class="dpad-btn" onmousedown="startLookHold('up')" onmouseup="stopLookHold()" onmouseleave="stopLookHold()" ontouchstart="startLookHold('up')" ontouchend="stopLookHold()">▲</button>
+      <div></div>
+      <button id="dpad-left" class="dpad-btn" onmousedown="startLookHold('left')" onmouseup="stopLookHold()" onmouseleave="stopLookHold()" ontouchstart="startLookHold('left')" ontouchend="stopLookHold()">◄</button>
+      <button onclick="resetLookCenter()" style="padding:13px 0;border-radius:10px;border:2px solid rgba(193,68,14,0.3);background:rgba(193,68,14,0.12);color:var(--terra);cursor:pointer;font-size:13px;font-family:inherit;">⊙</button>
+      <button id="dpad-right" class="dpad-btn" onmousedown="startLookHold('right')" onmouseup="stopLookHold()" onmouseleave="stopLookHold()" ontouchstart="startLookHold('right')" ontouchend="stopLookHold()">►</button>
+      <div></div>
+      <button id="dpad-down" class="dpad-btn" onmousedown="startLookHold('down')" onmouseup="stopLookHold()" onmouseleave="stopLookHold()" ontouchstart="startLookHold('down')" ontouchend="stopLookHold()">▼</button>
+      <div></div>
+    </div>
+
+    <div style="display:flex;gap:8px;">
+      <button onclick="resetLookCenter()" style="flex:1;padding:9px;border-radius:9px;border:1px solid var(--bordhi);background:rgba(193,68,14,0.12);color:var(--peach);cursor:pointer;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">↺ Reset</button>
+      <button onclick="closeDirectionMenu()" style="padding:9px 12px;border-radius:9px;border:1px solid var(--border);background:rgba(0,0,0,0.3);color:var(--dim);cursor:pointer;font-family:inherit;font-size:12px;">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- Movement Control Modal -->
+<div id="movementModal" style="
+    display:none; position:fixed; z-index:1000;
+    background:rgba(0,0,0,0.75); inset:0;
+    justify-content:center; align-items:center; backdrop-filter:blur(4px);"
+    onclick="if(event.target===this)closeMovementMenu()">
+  <div class="modal-inner">
+    <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;margin-bottom:4px;
+        color:var(--terra);letter-spacing:1px;text-transform:uppercase;">
+        🕹️ Movement Control
+    </div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:16px;">Hold keys to move — releases on mouse-up</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+      <div></div>
+      <button class="move-key" id="mkey-forward"
+        onmousedown="startMoveKey('forward')" onmouseup="stopMoveKey('forward')" onmouseleave="stopMoveKey('forward')"
+        ontouchstart="startMoveKey('forward')" ontouchend="stopMoveKey('forward')">W</button>
+      <div></div>
+      <button class="move-key" id="mkey-left"
+        onmousedown="startMoveKey('left')" onmouseup="stopMoveKey('left')" onmouseleave="stopMoveKey('left')"
+        ontouchstart="startMoveKey('left')" ontouchend="stopMoveKey('left')">A</button>
+      <button class="move-key" id="mkey-back"
+        onmousedown="startMoveKey('back')" onmouseup="stopMoveKey('back')" onmouseleave="stopMoveKey('back')"
+        ontouchstart="startMoveKey('back')" ontouchend="stopMoveKey('back')">S</button>
+      <button class="move-key" id="mkey-right"
+        onmousedown="startMoveKey('right')" onmouseup="stopMoveKey('right')" onmouseleave="stopMoveKey('right')"
+        ontouchstart="startMoveKey('right')" ontouchend="stopMoveKey('right')">D</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+      <button class="move-key" id="mkey-jump"
+        onmousedown="startMoveKey('jump')" onmouseup="stopMoveKey('jump')" onmouseleave="stopMoveKey('jump')"
+        ontouchstart="startMoveKey('jump')" ontouchend="stopMoveKey('jump')">⎵ Space</button>
+      <button class="move-key" id="mkey-sneak"
+        onmousedown="startMoveKey('sneak')" onmouseup="stopMoveKey('sneak')" onmouseleave="stopMoveKey('sneak')"
+        ontouchstart="startMoveKey('sneak')" ontouchend="stopMoveKey('sneak')">⇧ Shift</button>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <button class="move-key" id="mkey-sprint" style="width:100%;" onclick="toggleMoveSprint()">🏃 Sprint (toggle)</button>
+    </div>
+
+    <button onclick="closeMovementMenu()" style="width:100%;padding:9px;border-radius:9px;border:1px solid var(--border);background:rgba(0,0,0,0.3);color:var(--dim);cursor:pointer;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">✕ Close</button>
+  </div>
+</div>
+
+<!-- Follow Popup -->
+<div id="followPopup" onclick="if(event.target===this)closeFollowMenu()">
+  <div class="fp-inner">
+    <div class="fp-title">🏃 Follow Player</div>
+    <input type="text" id="followUsernameInput" placeholder="Enter username…" autocomplete="off"
+           onkeydown="if(event.key==='Enter')startFollow()">
+    <div class="fp-btns">
+      <button onclick="startFollow()"
+        style="background:linear-gradient(135deg,#c1440e,#d4601a);color:#fff;">▶ Start</button>
+      <button onclick="stopFollow()"
+        style="background:linear-gradient(135deg,#5a1010,#8a2020);color:#fff;">⏹ Stop</button>
+      <button onclick="closeFollowMenu()"
+        style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);color:var(--dim);flex:0;padding:9px 13px;">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- Auto-Clicker Modal -->
+<div id="clickerModal" style="
+    display:none; position:fixed; z-index:1000;
+    background:rgba(0,0,0,0.75); inset:0;
+    justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+  <div style="
+      background:linear-gradient(135deg,var(--panel),var(--mid));
+      border:1px solid var(--bordhi); border-radius:18px;
+      padding:22px; width:370px;
+      box-shadow:0 0 40px var(--glow);">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;margin-bottom:16px;">
+      <span style="font-size:15px;font-weight:bold;color:var(--terra);font-family:'Syne',sans-serif;letter-spacing:1px;text-transform:uppercase;flex:1;">🖱️ Auto-Clicker</span>
+      <button onclick="closeClickerMenu()" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:18px;line-height:1;padding:0 2px;">✕</button>
+    </div>
+
+    <!-- Two side-by-side panels -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+
+      <!-- LEFT panel -->
+      <div id="clickPanel_left" style="
+          border:1px solid var(--border); border-radius:12px;
+          padding:12px; background:rgba(0,0,0,0.3); transition:border-color .25s,background .25s;">
+        <div style="font-size:10px;letter-spacing:1.5px;color:var(--terra);text-transform:uppercase;font-weight:700;margin-bottom:10px;">👆 Left Click</div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
+          <button onclick="setClickerTicks('left',1)"  class="tick-preset">1t</button>
+          <button onclick="setClickerTicks('left',2)"  class="tick-preset">2t</button>
+          <button onclick="setClickerTicks('left',4)"  class="tick-preset">4t</button>
+          <button onclick="setClickerTicks('left',10)" class="tick-preset">10t</button>
+          <button onclick="setClickerTicks('left',20)" class="tick-preset">20t</button>
+        </div>
+
+        <input id="clickTicks_left" type="number" min="1" max="1200" value="1"
+          oninput="syncClickerTickInput('left')"
+          style="width:100%;box-sizing:border-box;padding:5px 8px;margin-bottom:8px;
+              background:rgba(0,0,0,0.4);border:1px solid var(--border);
+              color:var(--sand);border-radius:8px;font-family:inherit;font-size:11px;outline:none;">
+
+        <button id="clickHold_left" onclick="toggleClickerHold('left')"
+          style="width:100%;padding:5px;border-radius:8px;border:1px solid var(--border);
+              background:rgba(0,0,0,0.3);color:var(--smoke);cursor:pointer;font-family:inherit;
+              font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;transition:all .2s;">
+          🔒 Hold Mode
+        </button>
+
+        <div style="display:flex;gap:5px;">
+          <button id="clickStart_left" onclick="startClickerSide('left')"
+            style="flex:1;padding:6px 0;border-radius:8px;border:none;
+                background:linear-gradient(135deg,var(--rust),var(--terra));
+                color:#fff;cursor:pointer;font-family:'Syne',sans-serif;
+                font-weight:700;font-size:10px;letter-spacing:1px;text-transform:uppercase;">
+            ▶ Start
+          </button>
+          <button id="clickStop_left" onclick="stopClickerSide('left')"
+            style="flex:1;padding:6px 0;border-radius:8px;border:1px solid var(--border);
+                background:rgba(0,0,0,0.4);color:var(--smoke);cursor:pointer;font-family:'Syne',sans-serif;
+                font-weight:700;font-size:10px;letter-spacing:1px;text-transform:uppercase;">
+            ⏹ Stop
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT panel -->
+      <div id="clickPanel_right" style="
+          border:1px solid var(--border); border-radius:12px;
+          padding:12px; background:rgba(0,0,0,0.3); transition:border-color .25s,background .25s;">
+        <div style="font-size:10px;letter-spacing:1.5px;color:var(--peach);text-transform:uppercase;font-weight:700;margin-bottom:10px;">🤙 Right Click</div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
+          <button onclick="setClickerTicks('right',1)"  class="tick-preset">1t</button>
+          <button onclick="setClickerTicks('right',2)"  class="tick-preset">2t</button>
+          <button onclick="setClickerTicks('right',4)"  class="tick-preset">4t</button>
+          <button onclick="setClickerTicks('right',10)" class="tick-preset">10t</button>
+          <button onclick="setClickerTicks('right',20)" class="tick-preset">20t</button>
+        </div>
+
+        <input id="clickTicks_right" type="number" min="1" max="1200" value="1"
+          oninput="syncClickerTickInput('right')"
+          style="width:100%;box-sizing:border-box;padding:5px 8px;margin-bottom:8px;
+              background:rgba(0,0,0,0.4);border:1px solid var(--border);
+              color:var(--sand);border-radius:8px;font-family:inherit;font-size:11px;outline:none;">
+
+        <button id="clickHold_right" onclick="toggleClickerHold('right')"
+          style="width:100%;padding:5px;border-radius:8px;border:1px solid var(--border);
+              background:rgba(0,0,0,0.3);color:var(--smoke);cursor:pointer;font-family:inherit;
+              font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;transition:all .2s;">
+          🔒 Hold Mode
+        </button>
+
+        <div style="display:flex;gap:5px;">
+          <button id="clickStart_right" onclick="startClickerSide('right')"
+            style="flex:1;padding:6px 0;border-radius:8px;border:none;
+                background:linear-gradient(135deg,var(--rust),var(--terra));
+                color:#fff;cursor:pointer;font-family:'Syne',sans-serif;
+                font-weight:700;font-size:10px;letter-spacing:1px;text-transform:uppercase;">
+            ▶ Start
+          </button>
+          <button id="clickStop_right" onclick="stopClickerSide('right')"
+            style="flex:1;padding:6px 0;border-radius:8px;border:1px solid var(--border);
+                background:rgba(0,0,0,0.4);color:var(--smoke);cursor:pointer;font-family:'Syne',sans-serif;
+                font-weight:700;font-size:10px;letter-spacing:1px;text-transform:uppercase;">
+            ⏹ Stop
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hint -->
+    <div style="font-size:9px;color:var(--dim);text-align:center;margin-bottom:12px;letter-spacing:0.5px;">
+      Both sides run independently — mix tick rates or combine Hold + Pulse
+    </div>
+
+    <!-- Stop All -->
+    <button onclick="stopAllClickers()"
+      style="width:100%;padding:9px;border-radius:9px;border:1px solid var(--border);
+          background:rgba(0,0,0,0.4);color:var(--smoke);cursor:pointer;font-family:'Syne',sans-serif;
+          font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;
+          transition:background .2s,color .2s;"
+      onmouseover="this.style.background='rgba(193,68,14,0.2)';this.style.color='var(--sand)'"
+      onmouseout="this.style.background='rgba(0,0,0,0.4)';this.style.color='var(--smoke)'">
+      ⏹ Stop Both
+    </button>
+  </div>
+</div>
+
+<!-- Excavate Modal -->
+<div id="excavateModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px 24px;width:340px;box-shadow:0 8px 48px rgba(0,0,0,0.7),0 0 40px var(--bg-grad1);font-family:'Fira Code',monospace;">
+
+    <!-- Header -->
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;letter-spacing:2px;color:var(--terra);text-transform:uppercase;margin-bottom:18px;display:flex;align-items:center;gap:8px;">
+      <span>⛏</span><span>Excavate Box</span>
+      <button onclick="closeExcavateModal()" style="margin-left:auto;background:none;border:none;color:var(--smoke);cursor:pointer;font-size:18px;line-height:1;padding:0 2px;">✕</button>
+    </div>
+
+    <!-- Corner 1 -->
+    <div style="font-size:9px;letter-spacing:1.5px;color:var(--smoke);text-transform:uppercase;margin-bottom:7px;">Corner 1</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:14px;">
+      <div>
+        <div style="font-size:9px;color:var(--smoke);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">X</div>
+        <input id="exc-x1" type="number" placeholder="-868343" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:7px 9px;color:var(--sand);font-family:'Fira Code',monospace;font-size:11px;outline:none;box-sizing:border-box;transition:border-color .2s;" onfocus="this.style.borderColor='var(--terra)'" onblur="this.style.borderColor=''">
+      </div>
+      <div>
+        <div style="font-size:9px;color:var(--smoke);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Y</div>
+        <input id="exc-y1" type="number" placeholder="30" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:7px 9px;color:var(--sand);font-family:'Fira Code',monospace;font-size:11px;outline:none;box-sizing:border-box;transition:border-color .2s;" onfocus="this.style.borderColor='var(--terra)'" onblur="this.style.borderColor=''">
+      </div>
+      <div>
+        <div style="font-size:9px;color:var(--smoke);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Z</div>
+        <input id="exc-z1" type="number" placeholder="-84383" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:7px 9px;color:var(--sand);font-family:'Fira Code',monospace;font-size:11px;outline:none;box-sizing:border-box;transition:border-color .2s;" onfocus="this.style.borderColor='var(--terra)'" onblur="this.style.borderColor=''">
+      </div>
+    </div>
+
+    <!-- Corner 2 -->
+    <div style="font-size:9px;letter-spacing:1.5px;color:var(--smoke);text-transform:uppercase;margin-bottom:7px;">Corner 2</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:18px;">
+      <div>
+        <div style="font-size:9px;color:var(--smoke);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">X</div>
+        <input id="exc-x2" type="number" placeholder="-84000" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:7px 9px;color:var(--sand);font-family:'Fira Code',monospace;font-size:11px;outline:none;box-sizing:border-box;transition:border-color .2s;" onfocus="this.style.borderColor='var(--terra)'" onblur="this.style.borderColor=''">
+      </div>
+      <div>
+        <div style="font-size:9px;color:var(--smoke);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Y</div>
+        <input id="exc-y2" type="number" placeholder="-25" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:7px 9px;color:var(--sand);font-family:'Fira Code',monospace;font-size:11px;outline:none;box-sizing:border-box;transition:border-color .2s;" onfocus="this.style.borderColor='var(--terra)'" onblur="this.style.borderColor=''">
+      </div>
+      <div>
+        <div style="font-size:9px;color:var(--smoke);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Z</div>
+        <input id="exc-z2" type="number" placeholder="-84000" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:7px 9px;color:var(--sand);font-family:'Fira Code',monospace;font-size:11px;outline:none;box-sizing:border-box;transition:border-color .2s;" onfocus="this.style.borderColor='var(--terra)'" onblur="this.style.borderColor=''">
+      </div>
+    </div>
+
+    <!-- Progress (hidden until running) -->
+    <div id="excProgressWrap" style="display:none;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--smoke);margin-bottom:5px;">
+        <span>Progress</span><span id="excProgressLabel">0 / 0</span>
+      </div>
+      <div style="height:5px;background:rgba(0,0,0,0.5);border-radius:3px;overflow:hidden;">
+        <div id="excProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--terra),var(--peach));border-radius:3px;transition:width .4s;box-shadow:0 0 6px var(--glow);"></div>
+      </div>
+      <div id="excProgressDetail" style="font-size:9px;color:var(--smoke);margin-top:4px;letter-spacing:.5px;"></div>
+      <!-- Per-bot progress rows (shown only in multi-bot mode) -->
+      <div id="excMultiBotRows" style="display:none;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);"></div>
+    </div>
+
+    <!-- Buttons -->
+    <div style="display:flex;gap:8px;">
+      <button onclick="startExcavation()" id="excStartBtn"
+        style="flex:1;padding:10px;border-radius:9px;border:none;background:linear-gradient(135deg,var(--terra),var(--peach));color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;transition:all .2s;box-shadow:0 2px 12px var(--glow);">
+        ⛏ Start
+      </button>
+      <button onclick="stopExcavation()" id="excStopBtn"
+        style="flex:1;padding:10px;border-radius:9px;border:none;background:linear-gradient(135deg,var(--mid),var(--panel));color:var(--sand);cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;transition:all .2s;opacity:0.4;pointer-events:none;border:1px solid var(--border);">
+        ⏹ Stop
+      </button>
+      <button onclick="closeExcavateModal()"
+        style="padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.3);color:var(--smoke);cursor:pointer;font-family:inherit;font-size:12px;">✕</button>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+// ─── Settings tab — patched AFTER tabs.js runs ────────────────────────────────
+// tabs.js calls initTabs() on DOMContentLoaded. We use a second DOMContentLoaded
+// listener (guaranteed to fire after the first, in source order since this script
+// tag appears before renderer.js / tabs.js) — but actually tabs.js is loaded AFTER
+// this inline script, so we defer with setTimeout(0) inside DOMContentLoaded.
+
+// ─── Theme system ─────────────────────────────────────────────────────────────
+const THEME_KEY = 'sor_theme';
+const VALID_THEMES = ['ember','void','matrix','arctic','amethyst','sunset'];
+
+function applyTheme(name) {
+  if (!VALID_THEMES.includes(name)) name = 'ember';
+  document.documentElement.setAttribute('data-theme', name);
+  localStorage.setItem(THEME_KEY, name);
+
+  // Update active state on cards
+  VALID_THEMES.forEach(t => {
+    const card = document.getElementById('theme-card-' + t);
+    if (card) card.classList.toggle('active', t === name);
+  });
+}
+
+// Load theme immediately on script parse (before DOMContentLoaded) so there's no flash
+(function() {
+  const saved = localStorage.getItem(THEME_KEY);
+  if (saved && VALID_THEMES.includes(saved)) {
+    document.documentElement.setAttribute('data-theme', saved);
+  }
+})();
+
+// Sync theme card active state + inject Settings tab button once DOM + tabs.js are ready
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem(THEME_KEY) || 'ember';
+
+  // Wait one tick so tabs.js DOMContentLoaded handler (initTabs) has run first
+  setTimeout(() => {
+    // Mark the correct theme card as active
+    VALID_THEMES.forEach(t => {
+      const card = document.getElementById('theme-card-' + t);
+      if (card) card.classList.toggle('active', t === saved);
+    });
+
+    // ── Patch switchTab ──────────────────────────────────────────────────────
+    // tabs.js switchTab only sets display:flex/none — it never sets flex:1 or
+    // min-height:0 on #tab-settings because that panel skipped createTabPanel().
+    // We wrap switchTab to fix those missing properties every time settings opens.
+    const _origSwitchTab = window.switchTab;
+    window.switchTab = function(id) {
+      _origSwitchTab(id);
+
+      if (id === 'settings') {
+        const sp = document.getElementById('tab-settings');
+        if (sp) {
+          // Must be set as inline styles — CSS rules lose to switchTab's inline style.display
+          sp.style.flex          = '1';
+          sp.style.minHeight     = '0';
+          sp.style.overflowY     = 'auto';
+          sp.style.overflowX     = 'hidden';
+          sp.style.background    = 'var(--dark)';
+          sp.style.padding       = '14px 14px 40px';
+          sp.style.gap           = '14px';
+          sp.style.alignItems    = 'flex-start';
+          sp.style.flexDirection = 'row';
+          sp.style.flexWrap      = 'wrap';
+        }
+      }
+    };
+
+    // ── Add Settings button to tab bar ───────────────────────────────────────
+    const tabBar = document.getElementById('tabBar');
+    if (tabBar && !document.getElementById('tab-btn-settings')) {
+      const btn = document.createElement('button');
+      btn.id          = 'tab-btn-settings';
+      btn.className   = 'tab-btn';
+      btn.textContent = '⚙️ Settings';
+      btn.onclick     = () => window.switchTab('settings');
+      btn.style.cssText = tabBar.querySelector('.tab-btn')?.style.cssText || '';
+      tabBar.appendChild(btn);
+    }
+
+  }, 0);
+});
+
+// ─── Settings persistence ─────────────────────────────────────────────────────
+const SETTINGS_KEY = 'sor_settings';
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    if (s.autoReconnect   !== undefined) document.getElementById('setting-autoreconnect').checked     = s.autoReconnect;
+    if (s.reconnectDelay  !== undefined) document.getElementById('setting-reconnect-delay').value     = s.reconnectDelay;
+    if (s.reconnectMax    !== undefined) document.getElementById('setting-reconnect-max').value       = s.reconnectMax;
+    if (s.autoRespawn     !== undefined) document.getElementById('setting-autorespawn').checked       = s.autoRespawn;
+    if (s.antiAfk         !== undefined) document.getElementById('setting-antiafk').checked           = s.antiAfk;
+    if (s.antiAfkInterval !== undefined) document.getElementById('setting-antiafk-interval').value    = s.antiAfkInterval;
+    if (s.mcVersion       !== undefined) document.getElementById('setting-mc-version').value          = s.mcVersion;
+    if (s.timestamps      !== undefined) document.getElementById('setting-timestamps').checked        = s.timestamps;
+    if (s.maxLines        !== undefined) document.getElementById('setting-maxlines').value            = s.maxLines;
+    if (s.logLevel        !== undefined) document.getElementById('setting-loglevel').value            = s.logLevel;
+    if (s.notifications   !== undefined) document.getElementById('setting-notifs').checked            = s.notifications;
+    if (s.mentionNotif    !== undefined) document.getElementById('setting-mention-notif').checked     = s.mentionNotif;
+    if (s.mentionSound    !== undefined) document.getElementById('setting-mention-sound').checked     = s.mentionSound;
+
+    // Push reconnect config to main process (api may not be ready yet on first DOMContentLoaded,
+    // so defer slightly to ensure preload bridge is established)
+    setTimeout(() => {
+      if (window.api?.setReconnectSettings) {
+        window.api.setReconnectSettings({
+          enabled:  s.autoReconnect  ?? true,
+          delayMs:  s.reconnectDelay ?? 5000,
+          maxTries: s.reconnectMax   ?? 0,
+        });
+      }
+    }, 0);
+  } catch {}
+}
+
+function saveSettings() {
+  const s = {
+    autoReconnect:   document.getElementById('setting-autoreconnect').checked,
+    reconnectDelay:  +document.getElementById('setting-reconnect-delay').value,
+    reconnectMax:    +document.getElementById('setting-reconnect-max').value,
+    autoRespawn:     document.getElementById('setting-autorespawn').checked,
+    antiAfk:         document.getElementById('setting-antiafk').checked,
+    antiAfkInterval: +document.getElementById('setting-antiafk-interval').value,
+    mcVersion:       document.getElementById('setting-mc-version').value,
+    timestamps:      document.getElementById('setting-timestamps').checked,
+    maxLines:        +document.getElementById('setting-maxlines').value,
+    logLevel:        document.getElementById('setting-loglevel').value,
+    notifications:   document.getElementById('setting-notifs').checked,
+    mentionNotif:    document.getElementById('setting-mention-notif').checked,
+    mentionSound:    document.getElementById('setting-mention-sound').checked,
+  };
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+
+  // Push reconnect config to main process so botConnection.js can use it
+  if (window.api?.setReconnectSettings) {
+    window.api.setReconnectSettings({
+      enabled:  s.autoReconnect,
+      delayMs:  s.reconnectDelay,
+      maxTries: s.reconnectMax,
+    });
+  }
+
+  // Show brief feedback
+  const btn = document.querySelector('.settings-save-btn');
+  const orig = btn.textContent;
+  btn.textContent = '✓ Saved';
+  btn.style.background = 'linear-gradient(135deg,#2a6a1a,#3a8a2a)';
+  setTimeout(() => {
+    btn.textContent = orig;
+    btn.style.background = '';
+  }, 1400);
+}
+
+document.addEventListener('DOMContentLoaded', loadSettings);
+
+// ─── Notification permission helper ──────────────────────────────────────────
+function updateNotifPermissionUI() {
+  const status = Notification.permission;
+  const el  = document.getElementById('notif-permission-status');
+  const btn = document.getElementById('notif-permission-btn');
+  if (!el || !btn) return;
+  if (status === 'granted') {
+    el.textContent  = 'Status: ✅ Granted';
+    el.style.color  = 'var(--terra)';
+    btn.style.opacity = '0.4';
+    btn.style.pointerEvents = 'none';
+  } else if (status === 'denied') {
+    el.textContent = 'Status: ❌ Denied — enable in browser/OS settings';
+    el.style.color = '#d83020';
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  } else {
+    el.textContent = 'Status: ⚠️ Not yet granted';
+    el.style.color = '#e8a020';
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  }
+}
+async function requestNotifPermission() {
+  await Notification.requestPermission();
+  updateNotifPermissionUI();
+}
+document.addEventListener('DOMContentLoaded', updateNotifPermissionUI);
+
+// ── Excavation UI functions ───────────────────────────────────────────────────
+let _excavationActive = false;
+// Track per-bot progress for multi-bot display: botId -> { progress, total, mined, skipped }
+const _excBotProgress = new Map();
+
+function toggleExcavateModal() {
+  const m = document.getElementById('excavateModal');
+  if (!m) return;
+  if (m.style.display === 'flex') { closeExcavateModal(); return; }
+  m.style.display = 'flex';
+  // Close on backdrop click
+  m.onclick = e => { if (e.target === m) closeExcavateModal(); };
+}
+
+function closeExcavateModal() {
+  const m = document.getElementById('excavateModal');
+  if (m) m.style.display = 'none';
+}
+
+async function startExcavation() {
+  const x1 = parseFloat(document.getElementById('exc-x1').value);
+  const y1 = parseFloat(document.getElementById('exc-y1').value);
+  const z1 = parseFloat(document.getElementById('exc-z1').value);
+  const x2 = parseFloat(document.getElementById('exc-x2').value);
+  const y2 = parseFloat(document.getElementById('exc-y2').value);
+  const z2 = parseFloat(document.getElementById('exc-z2').value);
+  if ([x1, y1, z1, x2, y2, z2].some(isNaN)) {
+    alert('Please fill in all 6 coordinate fields (X, Y, Z for both corners).');
+    return;
+  }
+
+  // Determine which bots to use: multi-select takes priority, else active bot
+  const targetBots = (typeof selectedBots !== 'undefined' && selectedBots.size > 0)
+    ? Array.from(selectedBots)
+    : (typeof activeBotId !== 'undefined' && activeBotId !== null ? [activeBotId] : []);
+
+  if (targetBots.length === 0) return;
+
+  _excBotProgress.clear();
+
+  if (targetBots.length === 1) {
+    // Single bot — original behaviour
+    const result = await window.api.startExcavation(targetBots[0], { x1, y1, z1, x2, y2, z2 });
+    if (!result.success) { alert('Excavation failed: ' + result.error); return; }
+    _excBotProgress.set(targetBots[0], { progress: 0, total: 0, mined: 0, skipped: 0 });
+  } else {
+    // Multi-bot: partition the region
+    const result = await window.api.startExcavationMulti(targetBots, { x1, y1, z1, x2, y2, z2 });
+    if (!result.success) { alert('Excavation failed: ' + result.error); return; }
+    targetBots.forEach(id => _excBotProgress.set(id, { progress: 0, total: 0, mined: 0, skipped: 0 }));
+    _renderMultiBotProgressRows(targetBots);
+  }
+
+  _setExcavationUI(true, targetBots.length);
+}
+
+async function stopExcavation() {
+  // Stop all bots that have an active excavation tracked in _excBotProgress
+  const toStop = _excBotProgress.size > 0
+    ? Array.from(_excBotProgress.keys())
+    : (typeof activeBotId !== 'undefined' && activeBotId !== null ? [activeBotId] : []);
+  for (const id of toStop) {
+    await window.api.stopExcavation(id);
+  }
+  _excBotProgress.clear();
+  _setExcavationUI(false);
+}
+
+function _renderMultiBotProgressRows(botIds) {
+  const container = document.getElementById('excMultiBotRows');
+  if (!container) return;
+  container.innerHTML = botIds.map(id => {
+    const bot = (typeof bots !== 'undefined') ? bots[id] : null;
+    const name = bot?.name || `Bot ${id}`;
+    return `
+      <div style="margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--smoke);margin-bottom:2px;">
+          <span>⛏ ${name}</span>
+          <span id="excBotLabel-${id}">0%</span>
+        </div>
+        <div style="background:rgba(0,0,0,0.4);border-radius:4px;height:6px;overflow:hidden;">
+          <div id="excBotBar-${id}" style="height:100%;width:0%;background:linear-gradient(90deg,var(--terra),var(--peach));border-radius:4px;transition:width .3s;"></div>
+        </div>
+        <div id="excBotDetail-${id}" style="color:var(--smoke);font-size:10px;margin-top:1px;opacity:0.7;"></div>
+      </div>`;
+  }).join('');
+  container.style.display = 'block';
+}
+
+function _setExcavationUI(active, botCount = 1) {
+  _excavationActive = active;
+  const badge     = document.getElementById('excavateStatus');
+  const badgeText = document.getElementById('excavateText');
+  const startBtn  = document.getElementById('excStartBtn');
+  const stopBtn   = document.getElementById('excStopBtn');
+  const progress  = document.getElementById('excProgressWrap');
+  const multiRows = document.getElementById('excMultiBotRows');
+  if (badge)     { badge.classList.toggle('active', active); badge.classList.toggle('inactive', !active); }
+  if (badgeText)  badgeText.textContent = active
+    ? (botCount > 1 ? `Excavating (${botCount} bots)…` : 'Excavating…')
+    : 'Excavate';
+  if (startBtn)  { startBtn.style.opacity = active ? '0.4' : '1'; startBtn.style.pointerEvents = active ? 'none' : 'auto'; }
+  if (stopBtn)   { stopBtn.style.opacity  = active ? '1'   : '0.4'; stopBtn.style.pointerEvents = active ? 'auto' : 'none'; }
+  if (progress)   progress.style.display = active ? 'block' : 'none';
+  if (!active && multiRows) multiRows.style.display = 'none';
+}
+
+// ─── Sync hidden renderer.js spans → visual header bars ──────────────────────
+// renderer.js writes emoji strings into #healthBar and #hungerBar.
+// We watch them and translate emoji counts into fill-bar percentages.
+document.addEventListener('DOMContentLoaded', () => {
+  function countEmoji(str, emoji) {
+    return (str.match(new RegExp(emoji, 'g')) || []).length;
+  }
+
+  function syncBars() {
+    const hText = document.getElementById('healthBar')?.innerHTML || '';
+    const fText = document.getElementById('hungerBar')?.innerHTML || '';
+
+    const fullH = countEmoji(hText, '❤️');
+    const halfH = countEmoji(hText, '🤍');
+    const hpVal = fullH * 2 + halfH;
+
+    const fullF = countEmoji(fText, '🍖');
+    const halfF = countEmoji(fText, '🥩');
+    const foodVal = fullF * 2 + halfF;
+
+    const hFill = document.getElementById('healthBarFill');
+    const fFill = document.getElementById('hungerBarFill');
+    const hNum  = document.getElementById('healthNum');
+    const fNum  = document.getElementById('hungerNum');
+
+    if (hFill) hFill.style.width = (hpVal / 20 * 100) + '%';
+    if (fFill) fFill.style.width = (foodVal / 20 * 100) + '%';
+    if (hNum)  hNum.textContent  = hpVal + '/20';
+    if (fNum)  fNum.textContent  = foodVal + '/20';
+  }
+
+  const observer = new MutationObserver(syncBars);
+  ['healthBar','hungerBar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el, { childList: true, characterData: true, subtree: true });
+  });
+
+  // Also hook onBotUpdate for ping/mode/dimension
+  if (!window.api) return;
+  window.api.onBotUpdate(data => {
+    if (typeof activeBotId !== 'undefined' && data.accountId !== activeBotId) return;
+    const el = id => document.getElementById(id);
+    if (el('pingDisplay') && data.ping !== undefined) el('pingDisplay').textContent = data.ping + ' ms';
+    if (el('gameMode')    && data.gameMode)           el('gameMode').textContent    = data.gameMode;
+  });
+
+  // ── Excavation status listener ──────────────────────────────────────────────
+  if (window.api?.onExcavationStatus) {
+    window.api.onExcavationStatus(data => {
+      // Update per-bot progress map if this bot is tracked
+      if (_excBotProgress.has(data.accountId)) {
+        _excBotProgress.set(data.accountId, {
+          progress: data.progress || 0,
+          total:    data.total    || 0,
+          mined:    data.mined    || 0,
+          skipped:  data.skipped  || 0,
+        });
+      }
+
+      const isMulti = _excBotProgress.size > 1;
+
+      if (isMulti) {
+        // ── Update individual bot bar ──────────────────────────────────────
+        const bar    = document.getElementById(`excBotBar-${data.accountId}`);
+        const label  = document.getElementById(`excBotLabel-${data.accountId}`);
+        const detail = document.getElementById(`excBotDetail-${data.accountId}`);
+        if (data.total) {
+          const pct = Math.round((data.progress / data.total) * 100);
+          if (bar)    bar.style.width     = pct + '%';
+          if (label)  label.textContent   = `${pct}%`;
+          if (detail && data.mined !== undefined)
+            detail.textContent = `⛏ ${data.mined}  ✗ ${data.skipped}`;
+          if (data.done && label) label.textContent += ' ✓';
+        }
+
+        // ── Aggregate total bar ────────────────────────────────────────────
+        let aggProgress = 0, aggTotal = 0;
+        _excBotProgress.forEach(v => { aggProgress += v.progress; aggTotal += v.total; });
+        if (aggTotal > 0) {
+          const pct    = Math.round((aggProgress / aggTotal) * 100);
+          const aggBar = document.getElementById('excProgressBar');
+          const aggLbl = document.getElementById('excProgressLabel');
+          if (aggBar) aggBar.style.width   = pct + '%';
+          if (aggLbl) aggLbl.textContent   = `${aggProgress} / ${aggTotal}  (${pct}%)`;
+        }
+
+        // If all bots are done, deactivate
+        const allDone = Array.from(_excBotProgress.values()).every(v => v.progress >= v.total && v.total > 0);
+        if (!data.active && allDone) _setExcavationUI(false);
+
+      } else {
+        // ── Single-bot behaviour (original) ───────────────────────────────
+        if (typeof activeBotId === 'undefined' || data.accountId !== activeBotId) return;
+        _setExcavationUI(data.active);
+        if (data.total) {
+          const pct = Math.round((data.progress / data.total) * 100);
+          const bar    = document.getElementById('excProgressBar');
+          const label  = document.getElementById('excProgressLabel');
+          const detail = document.getElementById('excProgressDetail');
+          if (bar)   bar.style.width   = pct + '%';
+          if (label) label.textContent = `${data.progress} / ${data.total}  (${pct}%)`;
+          if (detail && data.mined !== undefined)
+            detail.textContent = `⛏ ${data.mined} mined  ·  ✗ ${data.skipped} skipped`;
+        }
+        if (data.done) {
+          const label = document.getElementById('excProgressLabel');
+          if (label) label.textContent += '  ✓ Done!';
+        }
+      }
+    });
+  }
+});
+</script>
+
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script src="settings.js"></script>
+<script src="renderer.js"></script>
+<script src="tabs.js"></script>
+<script src="macroBlocks.js"></script>
+<!-- craftingTab.js was already missing from the original Electron project
+     (referenced here, but not present anywhere in the source archive) — this
+     404s the same way it did in the Electron build. Add the file here if/when
+     you build that feature. -->
+<script src="craftingTab.js"></script>
+</body>
+</html>
