@@ -16,6 +16,5 @@ window.CONSOLE_CONFIG = {
     accessToken: sessionStorage.getItem('mc_console_token') || '',
 };
 
-if (!window.CONSOLE_CONFIG.accessToken && !window.location.pathname.endsWith('login.html')) {
-    window.location.href = 'login.html';
+if (!window.CONSOLE_CONFIG.accessToken && !window.IS_LOGIN_PAGE) {
 }
