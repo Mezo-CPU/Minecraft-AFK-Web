@@ -8,7 +8,7 @@
 window.CONSOLE_CONFIG = {
     // Where the backend (backend/ws-bridge.js on Bot-Hosting.net, tunneled
     // through Cloudflare) is reachable.
-    backendUrl: 'wss://gratuit-signatures-concern-purchase.trycloudflare.com',
+    backendUrl: 'wss://edition-muslim-entrance-characteristics.trycloudflare.com',
 
     // Filled in from sessionStorage after a successful login. If it's
     // missing (nobody's logged in this tab yet), send them to login.html
