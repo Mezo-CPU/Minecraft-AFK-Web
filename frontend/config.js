@@ -17,4 +17,5 @@ window.CONSOLE_CONFIG = {
 };
 
 if (!window.CONSOLE_CONFIG.accessToken && !window.IS_LOGIN_PAGE) {
+    window.location.href = 'login.html';
 }
