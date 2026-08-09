@@ -1953,11 +1953,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ─── Settings persistence ─────────────────────────────────────────────────────
-const SETTINGS_KEY = 'sor_settings';
+const SETTINGS_KEY_INLINE = 'sor_settings';
 
 function loadSettings() {
   try {
-    const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    const s = JSON.parse(localStorage.getItem(SETTINGS_KEY_INLINE) || '{}');
     if (s.autoReconnect   !== undefined) document.getElementById('setting-autoreconnect').checked     = s.autoReconnect;
     if (s.reconnectDelay  !== undefined) document.getElementById('setting-reconnect-delay').value     = s.reconnectDelay;
     if (s.reconnectMax    !== undefined) document.getElementById('setting-reconnect-max').value       = s.reconnectMax;
@@ -2002,7 +2002,7 @@ function saveSettings() {
     mentionNotif:    document.getElementById('setting-mention-notif').checked,
     mentionSound:    document.getElementById('setting-mention-sound').checked,
   };
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  localStorage.setItem(SETTINGS_KEY_INLINE, JSON.stringify(s));
 
   // Push reconnect config to main process so botConnection.js can use it
   if (window.api?.setReconnectSettings) {
