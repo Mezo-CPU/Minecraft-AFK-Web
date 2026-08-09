@@ -297,36 +297,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function showMsAuthCode(data) {
-    const box   = document.getElementById('msAuthCodeBox');
-    const link  = document.getElementById('msAuthLink');
-    const codeEl = document.getElementById('msAuthCode');
-    if (!box || !link || !codeEl) return;
-
-    link.href = data.verificationUri;
-    link.textContent = data.verificationUri;
-    codeEl.textContent = data.userCode;
-    box.style.display = 'block';
-
-    addLog('info', `🔑 Sign in at ${data.verificationUri} and enter code ${data.userCode}`);
-
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(data.userCode).catch(() => {});
-    }
-    // Best-effort — browsers may block this popup if it's not a direct result
-    // of the click that started auth; the link in the modal always works.
-    window.open(data.verificationUri, '_blank', 'noopener');
-}
-
-function copyMsAuthCode() {
-    const codeEl = document.getElementById('msAuthCode');
-    if (!codeEl || !codeEl.textContent) return;
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(codeEl.textContent).catch(() => {});
-    }
-    addLog('success', '📋 Code copied to clipboard.');
-}
-
 function showAddAccountModal() {
     document.getElementById('addAccountModal').classList.add('active');
 }
@@ -356,7 +326,7 @@ async function showCreateBotModal() {
     }
 
     document.getElementById('botName').value = '';
-    document.getElementById('botServerAddress').value = 'localhost';
+    document.getElementById('botServerAddress').value = '';
     document.getElementById('botServerPort').value = '25565';
     document.getElementById('createBotModal').classList.add('active');
 }
@@ -455,9 +425,6 @@ async function createMicrosoftAccount() {
         return;
     }
 
-    const codeBox = document.getElementById('msAuthCodeBox');
-    if (codeBox) codeBox.style.display = 'none';
-
     isAuthenticating = true;
     const btn = document.getElementById('createAcctBtn');
     const cancelBtn = document.getElementById('cancelCreateAcctBtn');
@@ -499,7 +466,12 @@ async function createBot() {
         return;
     }
 
-    const serverAddress = document.getElementById('botServerAddress').value.trim() || 'localhost';
+    const serverAddress = document.getElementById('botServerAddress').value.trim();
+    if (!serverAddress) {
+        addLog('error', '❌ Please enter a server address');
+        document.getElementById('botServerAddress').focus();
+        return;
+    }
     const serverPort = parseInt(document.getElementById('botServerPort').value.trim()) || 25565;
 
     if (serverPort < 1 || serverPort > 65535) {
@@ -868,10 +840,6 @@ function setupEventListeners() {
     });
 
     window.api.onBotAdded(async () => await loadBots());
-
-    if (typeof window.api.onMsAuthCode === 'function') {
-        window.api.onMsAuthCode(showMsAuthCode);
-    }
 
     if (typeof window.api.onContainerOpen === 'function') {
         window.api.onContainerOpen(data => {
