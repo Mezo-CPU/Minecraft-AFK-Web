@@ -18,6 +18,12 @@
     let socket           = null;
     let nextId            = 1;
     const pending          = new Map();  // rpc id -> { resolve, reject }
+    // Messages built while the socket is still CONNECTING (e.g. renderer.js's
+    // init() calls window.api.getBots() synchronously on page load, well
+    // before the WebSocket handshake to the ngrok tunnel finishes). These are
+    // held here and flushed once the socket actually opens, instead of being
+    // rejected outright.
+    const sendQueue         = [];
     const eventListeners   = new Map();  // channel -> Set<fn>
     let reconnectDelay     = 1000;
     const MAX_RECONNECT_DELAY = 15000;
@@ -39,6 +45,9 @@
             reconnectDelay = 1000;
             console.log('[api.js] Connected to backend');
             emitLocal('__connection__', { status: 'connected' });
+            while (sendQueue.length) {
+                socket.send(JSON.stringify(sendQueue.shift()));
+            }
         });
 
         socket.addEventListener('message', (ev) => {
@@ -64,6 +73,7 @@
             emitLocal('__connection__', { status: 'disconnected' });
             for (const [, p] of pending) p.reject(new Error('Connection to backend lost'));
             pending.clear();
+            sendQueue.length = 0;
             if (manuallyClosed) return;
             if (ev.code === 4001) {
                 console.error('[api.js] Backend rejected the connection — check your access token in config.js');
@@ -91,13 +101,20 @@
 
     function rpc(channel, ...args) {
         return new Promise((resolve, reject) => {
-            if (!socket || socket.readyState !== WebSocket.OPEN) {
+            if (!socket || socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING) {
                 reject(new Error('Not connected to backend'));
                 return;
             }
             const id = nextId++;
+            const msg = { type: 'rpc', id, channel, args };
             pending.set(id, { resolve, reject });
-            socket.send(JSON.stringify({ type: 'rpc', id, channel, args }));
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify(msg));
+            } else {
+                // Still CONNECTING — hold the message until the 'open' handler
+                // flushes it, rather than failing calls made during page load.
+                sendQueue.push(msg);
+            }
         });
     }
 
