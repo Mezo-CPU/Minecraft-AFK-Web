@@ -1484,6 +1484,15 @@
     <div class="modal-title">Authenticate Account</div>
     <label>Account Identifier (any name):</label>
     <input type="text" id="accountIdentifier" placeholder="e.g. MyMainAccount">
+    <div id="msAuthCodeBox" style="display:none;margin-top:12px;padding:12px;border:1px solid rgba(193,68,14,0.3);border-radius:8px;background:#1a1008;">
+      <div style="font-size:13px;margin-bottom:8px;color:var(--dim);">
+        A tab should have opened at <a id="msAuthLink" href="#" target="_blank" rel="noopener" style="color:#e8895a;"></a> — if not, click it. Enter this code there:
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div id="msAuthCode" style="font-size:22px;font-weight:700;letter-spacing:2px;color:#f2cba8;"></div>
+        <button type="button" class="btn-secondary" onclick="copyMsAuthCode()">Copy Code</button>
+      </div>
+    </div>
     <div class="modal-buttons">
       <button class="btn-primary"   id="createAcctBtn" onclick="createMicrosoftAccount()">Authenticate</button>
       <button class="btn-secondary" id="cancelCreateAcctBtn" onclick="closeModal()">Cancel</button>
