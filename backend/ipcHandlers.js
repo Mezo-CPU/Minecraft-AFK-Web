@@ -66,6 +66,19 @@ ipcMain.handle('create-microsoft-account', async (event, username) => {
                 authTitle: Titles.MinecraftJava,
                 flow: 'sisu',
                 deviceType: 'Win32',
+            }, (deviceCode) => {
+                // On a headless host nobody is watching the process's stdout,
+                // so relay the device-code prompt to the dashboard instead of
+                // letting prismarine-auth print it to a console no one has open.
+                if (core.mainWindow) {
+                    core.mainWindow.webContents.send('ms-auth-code', {
+                        identifier:      username,
+                        userCode:        deviceCode.user_code,
+                        verificationUri: deviceCode.verification_uri,
+                        message:         deviceCode.message,
+                        expiresIn:       deviceCode.expires_in,
+                    });
+                }
             });
             auth = await authflow.getMinecraftJavaToken({ fetchProfile: true });
         } catch (authErr) {
