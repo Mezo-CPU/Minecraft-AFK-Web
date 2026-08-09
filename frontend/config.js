@@ -1,14 +1,11 @@
 // config.js - Deployment-specific settings for the web console.
-// The access token is NO LONGER hardcoded here — it's fetched from the
-// backend's /login endpoint (see login.html) and kept only in this
-// browser's sessionStorage, so it's never shipped in plain JavaScript to
-// anyone who just visits the site.
+// backendUrl now points at a permanent ngrok domain, which does NOT change
+// between backend restarts — unlike the old Cloudflare quick tunnel, this
+// should only ever need to be set once.
 'use strict';
 
 window.CONSOLE_CONFIG = {
-    // Where the backend (backend/ws-bridge.js on Bot-Hosting.net, tunneled
-    // through Cloudflare) is reachable.
-    backendUrl: 'wss://graduate-mercury-jurisdiction-boys.trycloudflare.com',
+    backendUrl: 'wss://uncheck-upload-balmy.ngrok-free.dev',
 
     // Filled in from sessionStorage after a successful login. If it's
     // missing (nobody's logged in this tab yet), send them to login.html
