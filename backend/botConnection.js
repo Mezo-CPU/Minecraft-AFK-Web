@@ -461,52 +461,49 @@ botStates.set(botId, {
         // packets (server messages). Player chat arrives in a separate
         // playerChat packet that mineflayer does NOT forward to 'message'.
         // We handle both here with a shared processor.
-        function handleChatText(text) {
-        sendLog(botId, 'chat', text);
+function handleChatText(text) {
+    sendLog(botId, 'chat', text);
 
-        // NEW — parse TPS out of the /tps command response (Spigot/Paper/Essentials format)
-        const tpsMatch = /TPS[^0-9]*([0-9]+(?:\.[0-9]+)?)/i.exec(text);
-        if (tpsMatch) {
-       state.tps = parseFloat(tpsMatch[1]);
-        }
+    const state = botStates.get(botId);
+
+    // Parse TPS out of the /tps command response (Spigot/Paper/Essentials format)
+    const tpsMatch = /TPS[^0-9]*([0-9]+(?:\.[0-9]+)?)/i.exec(text);
+    if (tpsMatch && state) {
+        state.tps = parseFloat(tpsMatch[1]);
+    }
 
     // ── Auto-TPA ──────────────────────────────────────────────────────
-    ...
+    if (state?.autoTpa?.enabled) {
+        const reqMatch = /([A-Za-z0-9_]{1,16}) has requested/.exec(text);
+        if (reqMatch) {
+            state._tpaRequester = reqMatch[1];
+            state._tpaTime      = Date.now();
+            sendLog(botId, 'info', `[Auto-TPA] Cached requester: ${reqMatch[1]}`);
+        }
 
-            // ── Auto-TPA ──────────────────────────────────────────────────────
-            const state = botStates.get(botId);
-            if (state?.autoTpa?.enabled) {
-                const reqMatch = /([A-Za-z0-9_]{1,16}) has requested/.exec(text);
-                if (reqMatch) {
-                    state._tpaRequester = reqMatch[1];
-                    state._tpaTime      = Date.now();
-                    sendLog(botId, 'info', `[Auto-TPA] Cached requester: ${reqMatch[1]}`);
-                }
-
-                if (/tpaccept/.test(text) && state._tpaRequester && (Date.now() - (state._tpaTime || 0)) < 8000) {
-                    const requester = state._tpaRequester;
-                    const players   = state.autoTpa.players || [];
-                    // Empty whitelist = deny everyone. Must be explicitly listed to be accepted.
-                    const allowed   = players.length > 0 && players.some(p => p.toLowerCase() === requester.toLowerCase());
-                    sendLog(botId, 'info', `[Auto-TPA] Prompt detected — requester=${requester} allowed=${allowed} whitelist=${JSON.stringify(players)}`);
-                    if (allowed) {
-                        state._tpaRequester = null;
-                        state._tpaTime      = null;
-                        setTimeout(() => {
-                            try {
-                                if (!state.chatReady) {
-                                    sendLog(botId, 'warning', '[Auto-TPA] Chat not ready yet — skipping tpaccept');
-                                    return;
-                                }
-                                botInstance.chat('/tpaccept');
-                                sendLog(botId, 'success', `[Auto-TPA] Accepted teleport from ${requester}`);
-                            } catch (err) {
-                                sendLog(botId, 'error', `[Auto-TPA] Failed: ${err.message}`);
-                            }
-                        }, 500);
-                    } else {
-                        sendLog(botId, 'info', `[Auto-TPA] Denied teleport from ${requester} (not in whitelist)`);
-                        state._tpaRequester = null;
+        if (/tpaccept/.test(text) && state._tpaRequester && (Date.now() - (state._tpaTime || 0)) < 8000) {
+            const requester = state._tpaRequester;
+            const players   = state.autoTpa.players || [];
+            const allowed   = players.length > 0 && players.some(p => p.toLowerCase() === requester.toLowerCase());
+            sendLog(botId, 'info', `[Auto-TPA] Prompt detected — requester=${requester} allowed=${allowed} whitelist=${JSON.stringify(players)}`);
+            if (allowed) {
+                state._tpaRequester = null;
+                state._tpaTime      = null;
+                setTimeout(() => {
+                    try {
+                        if (!state.chatReady) {
+                            sendLog(botId, 'warning', '[Auto-TPA] Chat not ready yet — skipping tpaccept');
+                            return;
+                        }
+                        botInstance.chat('/tpaccept');
+                        sendLog(botId, 'success', `[Auto-TPA] Accepted teleport from ${requester}`);
+                    } catch (err) {
+                        sendLog(botId, 'error', `[Auto-TPA] Failed: ${err.message}`);
+                    }
+                }, 500);
+            } else {
+                sendLog(botId, 'info', `[Auto-TPA] Denied teleport from ${requester} (not in whitelist)`);
+                    state._tpaRequester = null;
                         state._tpaTime      = null;
                     }
                 }
