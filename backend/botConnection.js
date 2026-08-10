@@ -109,21 +109,23 @@ async function createBotConnection(botId) {
         botInstance.accountIdentifier = botConfig.accountIdentifier;
         botInstance.loadPlugin(pathfinder);
 
-        botStates.set(botId, {
-            sneaking:            false,
-            following:           null,
-            followInterval:      null,
-            clicking:            null,
-            clickInterval:       null,   // legacy — kept for compat
-            clickIntervalLeft:   null,
-            clickIntervalRight:  null,
-            clickTokenLeft:      null,
-            clickTokenRight:     null,
-            connectTime:         Date.now(),
-            commandCount:        0,
-            statsInterval:       null,
-            chatReady:           false,  // true only after signed-chat session is established
-        });
+botStates.set(botId, {
+    sneaking:            false,
+    following:           null,
+    followInterval:      null,
+    clicking:            null,
+    clickInterval:       null,
+    clickIntervalLeft:   null,
+    clickIntervalRight:  null,
+    clickTokenLeft:      null,
+    clickTokenRight:     null,
+    connectTime:         Date.now(),
+    commandCount:        0,
+    statsInterval:       null,
+    tpsInterval:         null,   // NEW
+    tps:                 null,   // NEW — last known TPS from /tps chat parsing
+    chatReady:           false,
+});
 
         // On 1.19+ servers with enforce-secure-profile, the server sends a
         // login_packet that initialises the signing session. mineflayer emits
@@ -243,8 +245,15 @@ async function createBotConnection(botId) {
                 }
 
                 state.statsInterval = setInterval(() => {
-                    if (activeBots.has(botId)) sendBotUpdate(botId);
-                }, 2000);
+                if (activeBots.has(botId)) sendBotUpdate(botId);
+               }, 2000);
+
+               // NEW — poll TPS every 10s via chat, since vanilla doesn't expose TPS to clients directly.
+               // Assumes a plugin like Essentials/Spigot that responds to "/tps" in chat.
+               state.tpsInterval = setInterval(() => {
+               if (!activeBots.has(botId) || !state.chatReady) return;
+                try { botInstance.chat('/tps'); } catch {}
+                }, 10000);
 
                 // Restore auto-clicker if it was running before disconnect.
                 // Use a longer delay so the bot is fully spawned and stable.
@@ -453,7 +462,16 @@ async function createBotConnection(botId) {
         // playerChat packet that mineflayer does NOT forward to 'message'.
         // We handle both here with a shared processor.
         function handleChatText(text) {
-            sendLog(botId, 'chat', text);
+        sendLog(botId, 'chat', text);
+
+        // NEW — parse TPS out of the /tps command response (Spigot/Paper/Essentials format)
+        const tpsMatch = /TPS[^0-9]*([0-9]+(?:\.[0-9]+)?)/i.exec(text);
+        if (tpsMatch) {
+       state.tps = parseFloat(tpsMatch[1]);
+        }
+
+    // ── Auto-TPA ──────────────────────────────────────────────────────
+    ...
 
             // ── Auto-TPA ──────────────────────────────────────────────────────
             const state = botStates.get(botId);
