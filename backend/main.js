@@ -190,7 +190,7 @@ function sendBotUpdate(accountId) {
             if (bot.players?.[bot.username]) ping = bot.players[bot.username].ping || 0;
         } catch { ping = 0; }
 
-        mainWindow.webContents.send('bot-update', {
+mainWindow.webContents.send('bot-update', {
             accountId,
             username:   bot.username,
             health:     bot.health || 0,
@@ -212,6 +212,8 @@ function sendBotUpdate(accountId) {
             ping,
             uptime,
             commandCount: state.commandCount || 0,
+            level:      bot.experience?.level ?? 0,
+            xpProgress: bot.experience?.progress ?? 0,
         });
     } catch (err) {
         console.error('Error in sendBotUpdate:', err);
