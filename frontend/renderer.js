@@ -129,7 +129,15 @@ function updateHeaderStats(bot) {
 
     // Account/XP level — reset to 0 when switching to a bot with no data yet
     if (typeof updateXPBar === 'function') {
-        updateXPBar(bot.level ?? 0, bot.xpProgress ?? 0);
+    updateXPBar(bot.level ?? 0, bot.xpProgress ?? 0);
+    }
+
+    // NEW — Server Status (player count + TPS)
+    const serverStatusEl = document.getElementById('serverStatus');
+    if (serverStatusEl) {
+    const pc  = bot.playerCount ?? '—';
+    const tps = (bot.tps !== undefined && bot.tps !== null) ? bot.tps.toFixed(1) : '—';
+    serverStatusEl.textContent = `${pc} online · ${tps} TPS`;
     }
 
     if (!coordsVisible) {
@@ -841,8 +849,10 @@ window.api.onBotUpdate(data => {
             ping: data.ping,
             uptime: data.uptime,
             commandCount: data.commandCount,
-            level: data.level ?? data.experience?.level ?? bots[activeBotId]?.level,
-            xpProgress: data.xpProgress ?? data.experienceProgress ?? data.experience?.progress ?? bots[activeBotId]?.xpProgress
+        level: data.level ?? data.experience?.level ?? bots[activeBotId]?.level,
+        xpProgress: data.xpProgress ?? data.experienceProgress ?? data.experience?.progress ?? bots[activeBotId]?.xpProgress,
+        playerCount: data.playerCount,   // NEW
+        tps: data.tps                    // NEW
         };
         updateHeaderStats(bots[activeBotId]);
         if (typeof window.tabsOnBotUpdate === 'function') window.tabsOnBotUpdate(data);
