@@ -1026,8 +1026,12 @@
         <span class="hdr-stat-val" id="username">Offline</span>
       </div>
       <div class="hdr-stat">
-        <span class="hdr-stat-label">Position</span>
-        <span class="hdr-stat-val" id="coordinates">0, 0, 0</span>
+        <span class="hdr-stat-label">
+          Position
+          <button type="button" id="coordsToggleBtn" onclick="toggleCoords()" title="Show/hide coordinates"
+            style="background:none;border:none;cursor:pointer;padding:0;margin-left:3px;font-size:11px;vertical-align:middle;color:var(--dim);line-height:1;">👁️</button>
+        </span>
+        <span class="hdr-stat-val" id="coordinates">Hidden</span>
       </div>
       <div class="hdr-stat">
         <span class="hdr-stat-label">Mode</span>
