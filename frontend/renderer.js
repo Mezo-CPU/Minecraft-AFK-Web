@@ -8,6 +8,8 @@ let commandHistories = {};   // botId → string[]
 let historyIndex = -1;
 
 async function init() {
+    const coordsBtn = document.getElementById('coordsToggleBtn');
+    if (coordsBtn) coordsBtn.textContent = coordsVisible ? '🙈' : '👁️';
     await loadBots();
     setupEventListeners();
 }
@@ -96,6 +98,21 @@ function handleBotClick(index, isShiftClick) {
     }
 }
 
+// Coordinates are hidden by default (e.g. for streaming/screen-sharing) and
+// only shown once the user explicitly toggles them on. Preference persists
+// across reloads via localStorage.
+let coordsVisible = localStorage.getItem('coordsVisible') === 'true';
+
+function toggleCoords() {
+    coordsVisible = !coordsVisible;
+    localStorage.setItem('coordsVisible', coordsVisible ? 'true' : 'false');
+    const btn = document.getElementById('coordsToggleBtn');
+    if (btn) btn.textContent = coordsVisible ? '🙈' : '👁️';
+    if (activeBotId !== null && bots[activeBotId]) {
+        updateHeaderStats(bots[activeBotId]);
+    }
+}
+
 function switchBot(index) {
     if (index < 0 || index >= bots.length) return;
     activeBotId = index;
@@ -110,7 +127,9 @@ function switchBot(index) {
 function updateHeaderStats(bot) {
     document.getElementById('username').textContent = bot.connectedUsername || bot.accountIdentifier || 'Not Connected';
 
-    if (bot.position) {
+    if (!coordsVisible) {
+        document.getElementById('coordinates').textContent = 'Hidden';
+    } else if (bot.position) {
         document.getElementById('coordinates').textContent = 
             `X: ${bot.position.x}, Y: ${bot.position.y}, Z: ${bot.position.z}`;
     } else {
