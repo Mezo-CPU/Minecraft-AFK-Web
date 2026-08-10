@@ -501,7 +501,9 @@ function refreshStatisticsUI() {
 function updateStatsCards(bot) {
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
-    set('stat-pos',    bot?.position ? `${bot.position.x}, ${bot.position.y}, ${bot.position.z}` : 'Not connected');
+    set('stat-pos', !(typeof coordsVisible === 'undefined' ? false : coordsVisible)
+        ? 'Hidden'
+        : (bot?.position ? `${bot.position.x}, ${bot.position.y}, ${bot.position.z}` : 'Not connected'));
     set('stat-uptime', formatTime(Math.floor((Date.now() - sessionStats.sessionStart) / 1000)));
     set('stat-health', bot ? `${bot.health || 0} / 20` : '—');
     set('stat-hunger', bot ? `${bot.food  || 0} / 20` : '—');
