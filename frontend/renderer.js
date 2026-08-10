@@ -816,31 +816,33 @@ function setupEventListeners() {
         });
     }
 
-    window.api.onBotUpdate(data => { 
-        if (data.accountId === activeBotId) {
-            bots[activeBotId] = { 
-                ...bots[activeBotId], 
-                connectedUsername: data.username, 
-                health: data.health, 
-                food: data.food, 
-                position: data.position,
-                sneaking: data.sneaking,
-                attacking: data.attacking,
-                attackTicks: data.attackTicks,
-                following: data.following,
-                surrounding: data.surrounding,
-                clicking: data.clicking,
-                hotbar: data.hotbar,
-                inventorySlots: data.inventorySlots,
-                heldItem: data.heldItem,
-                ping: data.ping,
-                uptime: data.uptime,
-                commandCount: data.commandCount
-            };
-            updateHeaderStats(bots[activeBotId]);
-            if (typeof window.tabsOnBotUpdate === 'function') window.tabsOnBotUpdate(data);
-        }
-    });
+window.api.onBotUpdate(data => { 
+    if (data.accountId === activeBotId) {
+        bots[activeBotId] = { 
+            ...bots[activeBotId], 
+            connectedUsername: data.username, 
+            health: data.health, 
+            food: data.food, 
+            position: data.position,
+            sneaking: data.sneaking,
+            attacking: data.attacking,
+            attackTicks: data.attackTicks,
+            following: data.following,
+            surrounding: data.surrounding,
+            clicking: data.clicking,
+            hotbar: data.hotbar,
+            inventorySlots: data.inventorySlots,
+            heldItem: data.heldItem,
+            ping: data.ping,
+            uptime: data.uptime,
+            commandCount: data.commandCount,
+            level: data.level ?? data.experience?.level ?? bots[activeBotId]?.level,
+            xpProgress: data.xpProgress ?? data.experienceProgress ?? data.experience?.progress ?? bots[activeBotId]?.xpProgress
+        };
+        updateHeaderStats(bots[activeBotId]);
+        if (typeof window.tabsOnBotUpdate === 'function') window.tabsOnBotUpdate(data);
+    }
+});
 
     window.api.onConnectionStatus(data => { 
         if (data.accountId >= 0 && data.accountId < bots.length) {
