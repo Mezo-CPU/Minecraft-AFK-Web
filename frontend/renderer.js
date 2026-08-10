@@ -127,6 +127,11 @@ function switchBot(index) {
 function updateHeaderStats(bot) {
     document.getElementById('username').textContent = bot.connectedUsername || bot.accountIdentifier || 'Not Connected';
 
+    // Account/XP level — reset to 0 when switching to a bot with no data yet
+    if (typeof updateXPBar === 'function') {
+        updateXPBar(bot.level ?? 0, bot.xpProgress ?? 0);
+    }
+
     if (!coordsVisible) {
         document.getElementById('coordinates').textContent = 'Hidden';
     } else if (bot.position) {
