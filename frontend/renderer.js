@@ -122,6 +122,11 @@ function switchBot(index) {
     document.getElementById('promptText').textContent = `${bot.name} >`;
     addLog('info', `Switched to bot: ${bot.name} (using ${bot.accountIdentifier})`);
     updateHeaderStats(bot);
+    // Keep the world-viewer tab in sync if it's the one currently open —
+    // otherwise it'd keep showing the previous bot's viewer iframe.
+    if (typeof activeTab !== 'undefined' && activeTab === 'viewer' && typeof refreshViewerTab === 'function') {
+        refreshViewerTab();
+    }
 }
 
 function updateHeaderStats(bot) {

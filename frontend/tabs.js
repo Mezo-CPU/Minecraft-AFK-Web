@@ -12,6 +12,10 @@ let sessionStats = {
 // Inventory drag-drop state
 let dragSource = null;
 
+// World-viewer status per bot, keyed by botId: { status: 'online'|'offline', port }
+// Populated by the 'viewer-status' backend event (see viewer.js on the backend).
+let viewerStatusByBot = {};
+
 // ─── Tab Bootstrap ────────────────────────────────────────────────────────────
 function initTabs() {
     buildTabBar();
@@ -20,8 +24,16 @@ function initTabs() {
     buildStatisticsTab();
     buildInventoryTab();
     buildContainersTab();
+    buildViewerTab();
     switchTab('console');
     startStatsUpdater();
+
+    if (window.api?.onViewerStatus) {
+        window.api.onViewerStatus(data => {
+            viewerStatusByBot[data.accountId] = data;
+            if (activeTab === 'viewer') refreshViewerTab();
+        });
+    }
 }
 
 function buildTabBar() {
@@ -44,6 +56,7 @@ function buildTabBar() {
         { id: 'statistics', label: '📊 Statistics' },
         { id: 'inventory',  label: '🎒 Inventory'  },
         { id: 'containers', label: '📦 Containers' },
+        { id: 'viewer',     label: '🗺️ Viewer'     },
         { id: 'settings',   label: '⚙️ Settings'   },
     ];
 
@@ -68,7 +81,7 @@ function switchTab(id) {
         btn.style.borderColor  = active ? '#a78bfa' : '#333';
     });
     // Include 'settings' so it always gets hidden when switching to any other tab
-    ['console', 'macros', 'statistics', 'inventory', 'containers', 'settings'].forEach(name => {
+    ['console', 'macros', 'statistics', 'inventory', 'containers', 'viewer', 'settings'].forEach(name => {
         const el = document.getElementById(`tab-${name}`);
         if (!el) return;
         if (name === id) {
@@ -80,6 +93,7 @@ function switchTab(id) {
     if (id === 'statistics') refreshStatisticsUI();
     if (id === 'inventory')  refreshInventoryUI();
     if (id === 'containers') refreshContainersTab();
+    if (id === 'viewer')     refreshViewerTab();
     if (id === 'settings')   refreshSettingsTab();
 }
 
@@ -1076,6 +1090,88 @@ function buildContainersTab() {
         </div>
     `;
     refreshContainersTab();
+}
+
+// ─── Viewer Tab (prismarine-viewer) ────────────────────────────────────────
+function buildViewerTab() {
+    const panel = createTabPanel('viewer');
+    panel.style.padding = '0';
+    panel.innerHTML = `
+        <div id="vw-toolbar" style="padding:10px 16px;border-bottom:1px solid #333;background:#1e1e1e;
+                display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0;">
+            <span style="color:#a78bfa;font-size:14px;font-weight:bold;">🗺️ World Viewer</span>
+            <span id="vw-status" style="color:#888;font-size:12px;flex:1;"></span>
+            <button id="vw-reload-btn" onclick="refreshViewerTab()" style="
+                background:#2d2d2d;color:#aaa;border:1px solid #444;
+                border-radius:4px;padding:5px 14px;cursor:pointer;font-size:12px;">
+                ⟳ Reload
+            </button>
+            <button id="vw-open-btn" onclick="vwOpenInNewTab()" style="display:none;
+                background:#2d2d2d;color:#aaa;border:1px solid #444;
+                border-radius:4px;padding:5px 14px;cursor:pointer;font-size:12px;">
+                ↗ Open in new tab
+            </button>
+        </div>
+        <div id="vw-body" style="flex:1;overflow:hidden;position:relative;background:#0a0a0a;">
+            <div id="vw-empty" style="position:absolute;inset:0;display:flex;flex-direction:column;
+                    align-items:center;justify-content:center;gap:12px;opacity:.5;padding:24px;text-align:center;">
+                <div style="font-size:52px;">🗺️</div>
+                <div id="vw-empty-text" style="color:#888;font-size:13px;line-height:1.7;max-width:420px;">
+                    No bot selected.
+                </div>
+            </div>
+            <iframe id="vw-frame" style="display:none;width:100%;height:100%;border:0;" allow="fullscreen"></iframe>
+        </div>
+    `;
+}
+
+function refreshViewerTab() {
+    const statusEl = document.getElementById('vw-status');
+    const emptyEl  = document.getElementById('vw-empty');
+    const emptyTxt = document.getElementById('vw-empty-text');
+    const frame    = document.getElementById('vw-frame');
+    const openBtn  = document.getElementById('vw-open-btn');
+    if (!frame) return;
+
+    const botId = typeof activeBotId !== 'undefined' ? activeBotId : null;
+    const info  = botId !== null ? viewerStatusByBot[botId] : null;
+
+    if (botId === null) {
+        frame.style.display = 'none';
+        openBtn.style.display = 'none';
+        emptyEl.style.display = 'flex';
+        emptyTxt.textContent = 'Select a bot to see its world viewer.';
+        if (statusEl) statusEl.textContent = '';
+        return;
+    }
+
+    if (!info || info.status !== 'online' || !info.port) {
+        frame.style.display = 'none';
+        frame.src = '';
+        openBtn.style.display = 'none';
+        emptyEl.style.display = 'flex';
+        emptyTxt.textContent = 'Viewer isn\'t running for this bot yet. ' +
+            'It starts automatically a few seconds after the bot spawns in-game.';
+        if (statusEl) statusEl.textContent = 'Offline';
+        return;
+    }
+
+    const base = (window.CONSOLE_CONFIG?.viewerBaseUrl || 'http://localhost').replace(/\/$/, '');
+    const url  = `${base}:${info.port}/`;
+
+    emptyEl.style.display = 'none';
+    frame.style.display   = 'block';
+    openBtn.style.display = '';
+    if (statusEl) statusEl.textContent = `Online — ${url}`;
+    if (frame.dataset.currentUrl !== url) {
+        frame.src = url;
+        frame.dataset.currentUrl = url;
+    }
+}
+
+function vwOpenInNewTab() {
+    const frame = document.getElementById('vw-frame');
+    if (frame?.dataset.currentUrl) window.open(frame.dataset.currentUrl, '_blank');
 }
 
 function refreshContainersTab() {

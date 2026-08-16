@@ -189,6 +189,10 @@
         onCraftingTableClosed: (cb) => on('crafting-table-closed', cb),
         onCraftingLoopStatus:  (cb) => on('crafting-loop-status', cb),
 
+        // Extra (new): world viewer (prismarine-viewer) port status per bot,
+        // e.g. { accountId, status: 'online', port } / { accountId, status: 'offline' }
+        onViewerStatus: (cb) => on('viewer-status', cb),
+
         // Extra (new): Microsoft device-code auth prompt. On a headless host
         // there's no console for prismarine-auth to print the sign-in link
         // and code to, so ipcHandlers.js relays it here instead.

@@ -333,6 +333,7 @@ botStates.set(botId, {
             botInstance.once('spawn', _startAntiAfk);
         }
 
+
         // ── Auto-Eat ──────────────────────────────────────────────────────────
         // Guard flag so we don't queue multiple simultaneous consume() calls
         // if 'health' fires several times before the eating animation finishes.

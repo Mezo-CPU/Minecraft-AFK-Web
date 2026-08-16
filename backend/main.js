@@ -228,6 +228,9 @@ function cleanupBot(botId) {
             if (state[k]) { clearInterval(state[k]); state[k] = null; }
         });
     }
+    // Safety net: catches manual-disconnect paths (ipcHandlers.js) that call
+    // cleanupBot() directly without going through the 'kicked'/'end' handlers
+    // in botConnection.js, which already stop the viewer on their own.
     botStates.delete(botId);
     activeBots.delete(botId);
 }
