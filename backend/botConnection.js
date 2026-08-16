@@ -122,10 +122,85 @@ botStates.set(botId, {
     connectTime:         Date.now(),
     commandCount:        0,
     statsInterval:       null,
-    tpsInterval:         null,   // NEW
-    tps:                 null,   // NEW — last known TPS from /tps chat parsing
-    chatReady:           false,
+    tpsInterval:         null,   // polls "/tps" via chat (plugin-dependent)
+    tps:                 null,   // unified TPS value exposed to the UI
+    tpsSource:           null,   // 'plugin' | 'estimated' | null
+    tpsPlugin:           null,   // last value parsed from a "/tps" chat reply
+    tpsPluginTime:       0,      // Date.now() of the last plugin reply
+    tpsEstimated:        null,   // rolling estimate from Time Update packet timing
+    mspt:                null,   // derived from the same packet timing
+    _tpsSamples:         [],     // rolling window of instantaneous packet-based TPS samples
+    _lastTickAge:        null,   // world "age" field from the previous update_time packet
+    _lastTickWall:       null,   // Date.now() when the previous update_time packet arrived
+    chatReady:            false,
 });
+
+        // ── Passive TPS/MSPT estimation (MiniHUD-style) ───────────────────────
+        // Vanilla sends an "update_time" packet (world age + time-of-day) to every
+        // client unprompted as part of normal world sync — no plugin, no chat
+        // command, no permission needed. The "age" field is the total tick count
+        // since world creation. Under normal conditions the server advances it in
+        // lockstep with real time; when the tick loop lags, "age" advances more
+        // slowly relative to wall-clock time between packets. So instead of
+        // asking the server for TPS, we just time how fast "age" is moving:
+        //
+        //     instantTPS = min(20, (deltaAge / deltaWallMs) * 1000)
+        //
+        // This works on ANY server, including vanilla ones with no /tps command
+        // and no server-side plugin exposing tick rate — it's the same trick
+        // MiniHUD uses client-side. We smooth it with a rolling average since a
+        // single packet gap is noisy (network jitter, GC pauses, etc.).
+        botInstance._client.on('update_time', (packet) => {
+            const state = botStates.get(botId);
+            if (!state) return;
+
+            // "age" is an int64. Depending on protocol lib version this may arrive
+            // as a plain Number, a BigInt, or a {low, high} Long-ish object. World
+            // age is far below Number.MAX_SAFE_INTEGER for any realistic uptime, so
+            // a Number/BigInt coercion is safe; guard against the Long-object case.
+            let age = packet.age;
+            if (typeof age === 'bigint') age = Number(age);
+            else if (age && typeof age === 'object' && 'low' in age) age = age.low >>> 0;
+            if (typeof age !== 'number' || !Number.isFinite(age)) return;
+
+            const now = Date.now();
+
+            if (state._lastTickAge != null && state._lastTickWall != null) {
+                const deltaAge  = age - state._lastTickAge;
+                const deltaWall = now - state._lastTickWall;
+
+                // deltaAge <= 0 happens right after a server/world transfer (age
+                // counter resets or jumps) — skip that sample rather than
+                // reporting a bogus TPS. deltaWall <= 0 shouldn't happen but is
+                // guarded defensively.
+                if (deltaAge > 0 && deltaWall > 0) {
+                    const instantTps = Math.min(20, (deltaAge / deltaWall) * 1000);
+
+                    state._tpsSamples.push(instantTps);
+                    if (state._tpsSamples.length > 12) state._tpsSamples.shift();
+
+                    const avg = state._tpsSamples.reduce((a, b) => a + b, 0) / state._tpsSamples.length;
+                    state.tpsEstimated = Math.round(avg * 100) / 100;
+                    state.mspt         = Math.round((deltaWall / deltaAge) * 100) / 100;
+
+                    // Prefer a recent plugin "/tps" reply (more precise — usually
+                    // gives real 1m/5m/15m averages) but fall back to our own
+                    // estimate if the plugin hasn't answered in the last 15s, or
+                    // never will (vanilla / command disabled / no permission).
+                    const pluginFresh = state.tpsPlugin != null && (now - state.tpsPluginTime) < 15000;
+                    if (pluginFresh) {
+                        state.tps       = state.tpsPlugin;
+                        state.tpsSource = 'plugin';
+                    } else {
+                        state.tps       = state.tpsEstimated;
+                        state.tpsSource = 'estimated';
+                    }
+                }
+            }
+
+            state._lastTickAge  = age;
+            state._lastTickWall = now;
+        });
 
         // On 1.19+ servers with enforce-secure-profile, the server sends a
         // login_packet that initialises the signing session. mineflayer emits
@@ -160,6 +235,15 @@ botStates.set(botId, {
                 // causing a "Chat message validation failure" kick.
                 state._tpaRequester = null;
                 state._tpaTime      = null;
+
+                // The world "age" counter is per-world — on a server transfer the
+                // new world's age sequence is unrelated to the old one, so any
+                // in-flight delta would be bogus. Reset the packet-timing state so
+                // the next update_time packet just seeds a fresh baseline instead
+                // of producing one garbage TPS sample.
+                state._lastTickAge  = null;
+                state._lastTickWall = null;
+                state._tpsSamples   = [];
 
                 // Stop the auto-clicker immediately on every server transfer.
                 // The bot is switching worlds — all tracked entities from the
@@ -248,8 +332,10 @@ botStates.set(botId, {
                 if (activeBots.has(botId)) sendBotUpdate(botId);
                }, 2000);
 
-               // NEW — poll TPS every 10s via chat, since vanilla doesn't expose TPS to clients directly.
-               // Assumes a plugin like Essentials/Spigot that responds to "/tps" in chat.
+               // Poll TPS every 10s via chat as a higher-precision source when a
+               // plugin (Essentials/Spigot/Paper) is available. If nothing responds
+               // within 15s, the update_time packet listener above keeps state.tps
+               // populated on its own — see 'tpsSource' to tell which one is live.
                state.tpsInterval = setInterval(() => {
                if (!activeBots.has(botId) || !state.chatReady) return;
                 try { botInstance.chat('/tps'); } catch {}
@@ -467,10 +553,16 @@ function handleChatText(text) {
 
     const state = botStates.get(botId);
 
-    // Parse TPS out of the /tps command response (Spigot/Paper/Essentials format)
+    // Parse TPS out of the /tps command response (Spigot/Paper/Essentials format).
+    // This is the higher-precision source (real 1m/5m/15m server-side averages)
+    // when it's available — see the update_time packet listener above for the
+    // MiniHUD-style fallback that works even without a plugin.
     const tpsMatch = /TPS[^0-9]*([0-9]+(?:\.[0-9]+)?)/i.exec(text);
     if (tpsMatch && state) {
-        state.tps = parseFloat(tpsMatch[1]);
+        state.tpsPlugin     = parseFloat(tpsMatch[1]);
+        state.tpsPluginTime = Date.now();
+        state.tps           = state.tpsPlugin;
+        state.tpsSource      = 'plugin';
     }
 
     // ── Auto-TPA ──────────────────────────────────────────────────────
