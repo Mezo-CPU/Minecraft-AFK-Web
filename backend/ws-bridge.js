@@ -43,8 +43,6 @@ if (!DASH_USER || !DASH_PASS) {
     );
 }
 
-// Constant-time string compare so response timing can't leak how much of a
-// guessed username/password was correct.
 function safeEqual(a, b) {
     const bufA = Buffer.from(String(a));
     const bufB = Buffer.from(String(b));
@@ -53,11 +51,9 @@ function safeEqual(a, b) {
 }
 
 function withCors(res) {
-    // Dashboard (Cloudflare Workers) and backend (Cloudflare Tunnel) are on
-    // different origins, so the login fetch() is cross-origin — allow it.
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, ngrok-skip-browser-warning');
 }
 
 function startServer({ ipcMain }) {
@@ -142,10 +138,6 @@ function startServer({ ipcMain }) {
         console.log(`[ws-bridge] Listening on port ${PORT} (ws path: /ws)`);
     });
 
-    // Adapter that stands in for Electron's `mainWindow`. Every existing file
-    // calls `core.mainWindow?.webContents.send(channel, data)` — that keeps
-    // working unmodified, it just now fans out over WebSocket instead of into
-    // a native window.
     return {
         webContents: {
             send(channel, data) {
