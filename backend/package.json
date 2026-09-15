@@ -4,7 +4,7 @@
   "description": "Always-on Minecraft bot backend (mineflayer + Microsoft auth), talks to the web dashboard over WebSocket.",
   "main": "main.js",
   "scripts": {
-    "start": "node main.js"
+    "start": "prestart": "mkdir -p data/auth-cache"
   },
   "dependencies": {
     "mineflayer": "^4.33.0",
