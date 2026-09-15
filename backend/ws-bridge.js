@@ -1,21 +1,4 @@
 // ws-bridge.js
-// Transport layer that replaces Electron's IPC between main process and
-// renderer. The frontend (api.js) sends { type:'rpc', id, channel, args }
-// over WebSocket for anything that used to be ipcRenderer.invoke(channel,
-// ...args); this server routes it to the matching ipcMain.handle(channel, fn)
-// registered by botConnection.js / commands.js / excavate.js / ipcHandlers.js
-// / ipcHandlersPatch.js — completely unchanged from the Electron version —
-// and replies with { type:'rpc-result' | 'rpc-error', id, ... }.
-//
-// Anything the main process used to push via mainWindow.webContents.send(
-// channel, data) (logs, bot-update, connection-status, etc.) is broadcast to
-// every connected client as { type:'event', channel, data }.
-//
-// Also exposes a POST /login endpoint: the frontend's login page posts a
-// username/password here, and only gets the real ACCESS_TOKEN back if they
-// match DASH_USER/DASH_PASS. This means the access token is never shipped
-// in the frontend's JavaScript — it only reaches the browser after a
-// correct login, and only lives in that browser's sessionStorage.
 'use strict';
 
 const http   = require('http');
@@ -134,8 +117,10 @@ function startServer({ ipcMain }) {
         ws.on('error', (err) => console.error('[ws-bridge] Socket error:', err.message));
     });
 
-    httpServer.listen(PORT, () => {
-        console.log(`[ws-bridge] Listening on port ${PORT} (ws path: /ws)`);
+    // Bind explicitly to 0.0.0.0 — some container platforms only route
+    // traffic to that interface, not to an unspecified/default bind.
+    httpServer.listen(PORT, '0.0.0.0', () => {
+        console.log(`[ws-bridge] Listening on 0.0.0.0:${PORT} (ws path: /ws)`);
     });
 
     return {
