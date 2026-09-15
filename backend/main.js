@@ -1,8 +1,4 @@
 // main.js - Entry point & server lifecycle
-// (Originally the Electron main process. Converted to a plain Node.js
-// WebSocket server — see ws-bridge.js for the transport layer that replaces
-// Electron IPC. Everything below this point — encryption, persistence,
-// bot/account state, sendLog/sendBotUpdate/cleanupBot — is unchanged.)
 'use strict';
 
 const { ipcMain } = require('./electron-shim');
@@ -10,26 +6,32 @@ const fs     = require('fs');
 const path   = require('path');
 const crypto = require('crypto');
 
-// ── Hostless filesystem diagnostic (temporary — remove once resolved) ─────────
-console.log('=== HOSTLESS FILESYSTEM TEST ===');
-console.log('CWD:', process.cwd());
-console.log('__dirname:', __dirname);
-console.log('/app exists:', fs.existsSync('/app'));
-
-for (const dir of ['/app/test-write', '/tmp/test-write']) {
-    try {
-        fs.mkdirSync(dir, { recursive: true });
-        fs.rmSync(dir, { recursive: true, force: true });
-        console.log(`${dir}: WRITE SUCCESS (cleaned up)`);
-    } catch (e) {
-        console.log(`${dir}: WRITE FAILED:`, e.code, e.path, e.message);
+// ── Local data directory ───────────────────────────────────────────────────
+// Tries the app folder first; falls back to /tmp if it isn't writable.
+// NOTE: on most free-tier container platforms /tmp (and often the whole
+// filesystem) is EPHEMERAL — wiped on every redeploy/restart. That means
+// accounts.json, bots.json, and tokens.enc won't survive a restart unless
+// hostless.net gives you a persistent volume to mount and point DATA_DIR at.
+// Check their docs for "persistent storage" / "volumes" if this data needs
+// to survive restarts.
+function resolveDataDir() {
+    const candidates = [path.join(__dirname, 'data'), '/tmp/mc-backend-data'];
+    for (const dir of candidates) {
+        try {
+            fs.mkdirSync(dir, { recursive: true });
+            const probe = path.join(dir, '.write-test');
+            fs.writeFileSync(probe, 'ok');
+            fs.rmSync(probe, { force: true });
+            return dir;
+        } catch (e) {
+            console.warn(`[startup] ${dir} not writable (${e.code}), trying next...`);
+        }
     }
+    throw new Error('[startup] No writable data directory found — check hostless.net storage config.');
 }
-console.log('=== END FILESYSTEM TEST ===');
 
-// ── Local data directory (inside the app folder) ──────────────────────────────
-const DATA_DIR = path.join(__dirname, 'data');
-fs.mkdirSync(DATA_DIR, { recursive: true });
+const DATA_DIR = resolveDataDir();
+console.log('[startup] Using DATA_DIR:', DATA_DIR);
 
 // ── File paths ────────────────────────────────────────────────────────────────
 const ACCOUNTS_FILE = path.join(DATA_DIR, 'accounts.json');
@@ -37,8 +39,6 @@ const BOTS_FILE     = path.join(DATA_DIR, 'bots.json');
 const TOKENS_FILE   = path.join(DATA_DIR, 'tokens.enc');     // .enc = encrypted
 
 // ── Encryption helpers ────────────────────────────────────────────────────────
-// Key is derived from a stable machine+app-specific secret stored alongside
-// the data. On first run the secret is randomly generated and saved.
 const KEY_FILE = path.join(DATA_DIR, '.secret');
 
 function loadOrCreateSecret() {
@@ -53,12 +53,11 @@ function loadOrCreateSecret() {
 const ENC_KEY = loadOrCreateSecret();   // 256-bit AES key
 
 function encryptJSON(obj) {
-    const iv         = crypto.randomBytes(12);                       // 96-bit IV for GCM
+    const iv         = crypto.randomBytes(12);
     const cipher     = crypto.createCipheriv('aes-256-gcm', ENC_KEY, iv);
     const plaintext  = Buffer.from(JSON.stringify(obj), 'utf8');
     const encrypted  = Buffer.concat([cipher.update(plaintext), cipher.final()]);
-    const authTag    = cipher.getAuthTag();                          // 16-byte GCM tag
-    // Layout: [4-byte iv-len][iv][4-byte tag-len][authTag][ciphertext]
+    const authTag    = cipher.getAuthTag();
     const ivLen  = Buffer.allocUnsafe(4); ivLen.writeUInt32BE(iv.length);
     const tagLen = Buffer.allocUnsafe(4); tagLen.writeUInt32BE(authTag.length);
     return Buffer.concat([ivLen, iv, tagLen, authTag, encrypted]);
@@ -81,22 +80,18 @@ function decryptJSON(buf) {
 let mainWindow            = null;
 let authenticatedAccounts = [];
 let bots                  = [];
-let activeBots            = new Map();   // botId -> mineflayer bot instance
-let authflows             = new Map();   // accountIdentifier -> Authflow instance
-let botStates             = new Map();   // botId -> state object
+let activeBots            = new Map();
+let authflows             = new Map();
+let botStates             = new Map();
 let storedTokens          = {};
-// Set of botIds for which auto-reconnect has been manually cancelled.
-// scheduleReconnect checks this before each attempt and clears it on success.
 const reconnectCancelled  = new Set();
 
-// Reconnect settings — pushed from renderer via 'set-reconnect-settings' IPC
 const reconnectSettings = {
     enabled:  true,
     delayMs:  5000,
-    maxTries: 0,    // 0 = unlimited
+    maxTries: 0,
 };
 
-// Bot behaviour settings — pushed from renderer via 'set-bot-behaviour-settings' IPC
 const botBehaviourSettings = {
     autorespawn:      false,
     antiafk:          false,
@@ -121,8 +116,6 @@ module.exports = {
     sendLog,
     sendBotUpdate,
     cleanupBot,
-    // Save helpers are set as real functions after their definitions below,
-    // so we forward them via wrapper to avoid the temporal dead zone.
     saveStoredTokens:          (...a) => saveStoredTokens(...a),
     saveAuthenticatedAccounts: (...a) => saveAuthenticatedAccounts(...a),
     saveBots:                  (...a) => saveBots(...a),
@@ -178,7 +171,6 @@ function sendBotUpdate(accountId) {
         const bot   = activeBots.get(accountId);
         const state = botStates.get(accountId) || {};
 
-        // Hotbar slots 36-44
         const hotbar = [];
         if (bot.inventory) {
             for (let i = 36; i <= 44; i++) {
@@ -187,14 +179,12 @@ function sendBotUpdate(accountId) {
             }
         }
 
-        // Full inventory slots: armor 5-8, main+hotbar 9-44, offhand 45
         const inventorySlots = {};
         if (bot.inventory) {
             for (let i = 5; i <= 44; i++) {
                 const item = bot.inventory.slots[i];
                 inventorySlots[i] = item ? { name: item.name, count: item.count, slot: i } : null;
             }
-            // offhand
             const offhand = bot.inventory.slots[45];
             inventorySlots[45] = offhand ? { name: offhand.name, count: offhand.count, slot: 45 } : null;
         }
@@ -231,8 +221,8 @@ function sendBotUpdate(accountId) {
             commandCount: state.commandCount || 0,
 			level:      bot.experience?.level ?? 0,
             xpProgress: bot.experience?.progress ?? 0,
-            playerCount: Object.keys(bot.players || {}).length,   // NEW
-            tps:         state.tps ?? null,                       // NEW
+            playerCount: Object.keys(bot.players || {}).length,
+            tps:         state.tps ?? null,
         });
     } catch (err) {
         console.error('Error in sendBotUpdate:', err);
@@ -252,8 +242,6 @@ function cleanupBot(botId) {
 }
 
 // ── Load sub-modules ──────────────────────────────────────────────────────────
-// (unchanged — these register their ipcMain handlers into electron-shim.js
-// exactly as they registered them into real Electron ipcMain before)
 require('./botConnection');
 require('./commands');
 require('./ipcHandlers');
@@ -261,13 +249,6 @@ require('./ipcHandlersPatch');
 require('./excavate');
 
 // ── Server bootstrap ──────────────────────────────────────────────────────────
-// Replaces the old Electron BrowserWindow lifecycle. Instead of loading
-// index.html into a native window, we start an HTTP+WebSocket server that the
-// (separately hosted) web frontend connects to. `mainWindow` becomes a small
-// adapter object whose `.webContents.send(channel, data)` broadcasts to every
-// connected browser tab over WebSocket — every other file in this project
-// calls that exact method (`core.mainWindow?.webContents.send(...)`) and
-// needed zero changes to keep working.
 const { startServer } = require('./ws-bridge');
 
 loadStoredTokens();
