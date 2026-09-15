@@ -9,10 +9,13 @@ const fs = require('fs');
 const core = require('./main');
 const { createBotConnection } = require('./botConnection');
 
-// ── Local data directory (must match main.js) ─────────────────────────────────
-const DATA_DIR    = path.join(__dirname, 'data');
-// Portable auth-cache location under the app's own data/ dir (the original
-// hardcoded a Windows-only path here, which never worked outside Windows).
+// ── Local data directory ───────────────────────────────────────────────────────
+// Use the SAME resolved writable dir main.js already picked (app folder if
+// writable, otherwise /tmp) — this file previously redefined its own
+// DATA_DIR pointing straight at __dirname/data, which broke on hosts
+// (like Hostless) where /app isn't writable, even though main.js had
+// already fallen back to /tmp successfully.
+const DATA_DIR    = core.DATA_DIR;
 const TOKENS_DIR  = path.join(DATA_DIR, 'auth-cache');
 // Prismarine-auth writes JSON files into authCacheDir while running.
 // These are kept as plaintext — the sensitive Minecraft session token is
