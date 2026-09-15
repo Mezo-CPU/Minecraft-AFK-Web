@@ -22,7 +22,7 @@ const http   = require('http');
 const crypto = require('crypto');
 const { WebSocketServer, WebSocket } = require('ws');
 
-const PORT         = process.env.PORT || 25580;
+const PORT = process.env.PORT || 8000;
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN || '';
 const DASH_USER    = process.env.DASH_USER || '';
 const DASH_PASS    = process.env.DASH_PASS || '';
