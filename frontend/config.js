@@ -1,11 +1,9 @@
 // config.js - Deployment-specific settings for the web console.
-// backendUrl now points at a permanent ngrok domain, which does NOT change
-// between backend restarts — unlike the old Cloudflare quick tunnel, this
-// should only ever need to be set once.
+// backendUrl points at the hostless.net-hosted backend.
 'use strict';
 
 window.CONSOLE_CONFIG = {
-    backendUrl: 'wss://uncheck-upload-balmy.ngrok-free.dev',
+    backendUrl: 'wss://mezoacc.hostless.app',
 
     // Filled in from sessionStorage after a successful login. If it's
     // missing (nobody's logged in this tab yet), send them to login.html
@@ -19,10 +17,11 @@ window.CONSOLE_CONFIG = {
     //
     // - If the backend runs on the SAME machine you're viewing the dashboard
     //   from, leave this as 'http://localhost' — it just works.
-    // - If the backend runs remotely, you must set up your own tunnel/proxy
-    //   for the viewer port(s) (ideally one that adds authentication) and
-    //   point this at that instead. See viewer.js's header comment for why
-    //   this port isn't just auto-added to the existing ngrok tunnel.
+    // - If the backend runs remotely (which it now does, on hostless.net),
+    //   you must set up your own tunnel/proxy for the viewer port(s)
+    //   (ideally one that adds authentication) and point this at that
+    //   instead. See viewer.js's header comment for why this port isn't
+    //   just auto-added to the existing backend connection.
     viewerBaseUrl: 'http://localhost',
 };
 
