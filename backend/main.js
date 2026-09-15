@@ -10,10 +10,10 @@ const crypto = require('crypto');
 // Tries the app folder first; falls back to /tmp if it isn't writable.
 // NOTE: on most free-tier container platforms /tmp (and often the whole
 // filesystem) is EPHEMERAL — wiped on every redeploy/restart. That means
-// accounts.json, bots.json, and tokens.enc won't survive a restart unless
-// hostless.net gives you a persistent volume to mount and point DATA_DIR at.
-// Check their docs for "persistent storage" / "volumes" if this data needs
-// to survive restarts.
+// accounts.json, bots.json, tokens.enc, the auth-cache, and autotpa.json
+// won't survive a restart unless hostless.net gives you a persistent volume
+// to mount and point DATA_DIR at. Check their docs for "persistent storage"
+// / "volumes" if this data needs to survive restarts.
 function resolveDataDir() {
     const candidates = [path.join(__dirname, 'data'), '/tmp/mc-backend-data'];
     for (const dir of candidates) {
@@ -110,6 +110,7 @@ module.exports = {
     get botStates()             { return botStates; },
     get storedTokens()          { return storedTokens; },
     get authenticatedAccounts() { return authenticatedAccounts; },
+    DATA_DIR,
     reconnectSettings,
     reconnectCancelled,
     botBehaviourSettings,
