@@ -332,15 +332,6 @@ botStates.set(botId, {
                 if (activeBots.has(botId)) sendBotUpdate(botId);
                }, 2000);
 
-               // Poll TPS every 10s via chat as a higher-precision source when a
-               // plugin (Essentials/Spigot/Paper) is available. If nothing responds
-               // within 15s, the update_time packet listener above keeps state.tps
-               // populated on its own — see 'tpsSource' to tell which one is live.
-               state.tpsInterval = setInterval(() => {
-               if (!activeBots.has(botId) || !state.chatReady) return;
-                try { botInstance.chat('/tps'); } catch {}
-                }, 10000);
-
                 // Restore auto-clicker if it was running before disconnect.
                 // Use a longer delay so the bot is fully spawned and stable.
                 // We call ipcMain.emit directly which runs the 'execute-command'
