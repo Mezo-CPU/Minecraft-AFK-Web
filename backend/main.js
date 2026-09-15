@@ -190,7 +190,7 @@ function sendBotUpdate(accountId) {
             if (bot.players?.[bot.username]) ping = bot.players[bot.username].ping || 0;
         } catch { ping = 0; }
 
-mainWindow.webContents.send('bot-update', {
+        mainWindow.webContents.send('bot-update', {
             accountId,
             username:   bot.username,
             health:     bot.health || 0,
@@ -212,8 +212,10 @@ mainWindow.webContents.send('bot-update', {
             ping,
             uptime,
             commandCount: state.commandCount || 0,
-            level:      bot.experience?.level ?? 0,
+			level:      bot.experience?.level ?? 0,
             xpProgress: bot.experience?.progress ?? 0,
+            playerCount: Object.keys(bot.players || {}).length,   // NEW
+            tps:         state.tps ?? null,                       // NEW
         });
     } catch (err) {
         console.error('Error in sendBotUpdate:', err);
@@ -224,14 +226,11 @@ mainWindow.webContents.send('bot-update', {
 function cleanupBot(botId) {
     const state = botStates.get(botId);
     if (state) {
-        ['followInterval', 'statsInterval', 'clickInterval', 'clickIntervalLeft', 'clickIntervalRight', 'antiAfkTimer'].forEach(k => {
+        ['followInterval', 'statsInterval', 'clickInterval', 'clickIntervalLeft', 'clickIntervalRight', 'antiAfkTimer', 'tpsInterval'].forEach(k => {
             if (state[k]) { clearInterval(state[k]); state[k] = null; }
         });
-    }
-    // Safety net: catches manual-disconnect paths (ipcHandlers.js) that call
-    // cleanupBot() directly without going through the 'kicked'/'end' handlers
-    // in botConnection.js, which already stop the viewer on their own.
-    botStates.delete(botId);
+    }    
+	botStates.delete(botId);
     activeBots.delete(botId);
 }
 
