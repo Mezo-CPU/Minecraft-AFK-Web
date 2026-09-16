@@ -79,6 +79,20 @@ ipcMain.handle('create-microsoft-account', async (event, username) => {
                 }
                 core.sendLog(null, 'auth',
                     `🔑 Microsoft sign-in required for "${username}": go to ${deviceCode.verification_uri} and enter code ${deviceCode.user_code} (expires in ${Math.round((deviceCode.expires_in || 900) / 60)} min)`);
+
+                // Hostless.cloud (and any other headless/no-Electron-window host) only
+                // shows this process's stdout in its console. core.mainWindow is
+                // undefined there, and core.sendLog may only reach clients connected
+                // to the ws-bridge — if the dashboard tab isn't open/connected yet,
+                // nothing sees it. This is a plain, unconditional console.log so the
+                // code always lands in Hostless's console regardless of what
+                // sendLog/mainWindow do.
+                console.log('========================================');
+                console.log(`[auth] Microsoft sign-in required for "${username}"`);
+                console.log(`[auth] Open: ${deviceCode.verification_uri}`);
+                console.log(`[auth] Enter code: ${deviceCode.user_code}`);
+                console.log(`[auth] Expires in: ${Math.round((deviceCode.expires_in || 900) / 60)} min`);
+                console.log('========================================');
             });
             auth = await authflow.getMinecraftJavaToken({ fetchProfile: true });
         } catch (authErr) {
