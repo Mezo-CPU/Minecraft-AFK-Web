@@ -33,6 +33,15 @@ function resolveDataDir() {
 const DATA_DIR = resolveDataDir();
 console.log('[startup] Using DATA_DIR:', DATA_DIR);
 
+// ── Auth cache directory ─────────────────────────────────────────────────────
+// prismarine-auth calls fs.mkdir on a per-account subfolder (e.g. auth-cache/Tezo)
+// WITHOUT { recursive: true }, so if auth-cache/ itself doesn't exist yet, that
+// mkdir throws ENOENT. Creating the parent here up front fixes it, since Node's
+// non-recursive mkdir only needs the immediate parent to already exist.
+const AUTH_CACHE_DIR = path.join(DATA_DIR, 'auth-cache');
+fs.mkdirSync(AUTH_CACHE_DIR, { recursive: true });
+console.log('[startup] Using AUTH_CACHE_DIR:', AUTH_CACHE_DIR);
+
 // ── File paths ────────────────────────────────────────────────────────────────
 const ACCOUNTS_FILE = path.join(DATA_DIR, 'accounts.json');
 const BOTS_FILE     = path.join(DATA_DIR, 'bots.json');
@@ -111,6 +120,7 @@ module.exports = {
     get storedTokens()          { return storedTokens; },
     get authenticatedAccounts() { return authenticatedAccounts; },
     DATA_DIR,
+    AUTH_CACHE_DIR,
     reconnectSettings,
     reconnectCancelled,
     botBehaviourSettings,
