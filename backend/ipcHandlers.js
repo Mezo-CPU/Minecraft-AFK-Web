@@ -9,15 +9,9 @@ const fs = require('fs');
 const core = require('./main');
 const { createBotConnection } = require('./botConnection');
 
-// ── Local data directory (must match main.js) ─────────────────────────────────
-const DATA_DIR    = path.join(__dirname, 'data');
-// Portable auth-cache location under the app's own data/ dir (the original
-// hardcoded a Windows-only path here, which never worked outside Windows).
+// ── Local data directory ───────────────────────────────────────────────────────
+const DATA_DIR    = core.DATA_DIR;
 const TOKENS_DIR  = path.join(DATA_DIR, 'auth-cache');
-// Prismarine-auth writes JSON files into authCacheDir while running.
-// These are kept as plaintext — the sensitive Minecraft session token is
-// already protected separately by the encrypted tokens.enc file in main.js.
-
 
 // ── Auto-TPA persistence ──────────────────────────────────────────────────────
 const AUTOTPA_FILE = path.join(DATA_DIR, 'autotpa.json');
@@ -45,14 +39,9 @@ ipcMain.handle('create-microsoft-account', async (event, username) => {
     try {
         const authCacheDir = path.join(TOKENS_DIR, username);
 
-        // Back up existing token and authflow so they can be restored if the
-        // new auth attempt fails — tokens are never auto-deleted on failure.
         const previousToken    = core.storedTokens[username] ?? null;
         const previousAuthflow = core.authflows.get(username) ?? null;
 
-        // Wipe the existing cache dir and live authflow before authenticating.
-        // This forces prismarine-auth to start a fresh device-code flow instead
-        // of silently reusing cached Microsoft/XSTS tokens.
         core.authflows.delete(username);
         if (fs.existsSync(authCacheDir)) {
             try { fs.rmSync(authCacheDir, { recursive: true, force: true }); } catch {}
@@ -67,9 +56,18 @@ ipcMain.handle('create-microsoft-account', async (event, username) => {
                 flow: 'sisu',
                 deviceType: 'Win32',
             }, (deviceCode) => {
-                // On a headless host nobody is watching the process's stdout,
-                // so relay the device-code prompt to the dashboard instead of
-                // letting prismarine-auth print it to a console no one has open.
+                // Relay the device-code prompt to the dashboard's existing
+                // webContents-forwarding channel (which the web UI's ms-auth-code
+                // listener may not exist for), AND to sendLog, which the web
+                // dashboard is already known to render live.
+                //
+                // NOTE: accountId is `null` here, not `username` — renderer.js's
+                // onLog filter only shows a log line when
+                // `data.accountId === null || data.accountId === activeBotId`.
+                // This message isn't tied to any bot index, so it must be
+                // `null` to pass that filter and actually render (previously
+                // it used `username`, a string that never matched either
+                // condition, so the line was silently dropped).
                 if (core.mainWindow) {
                     core.mainWindow.webContents.send('ms-auth-code', {
                         identifier:      username,
@@ -79,32 +77,40 @@ ipcMain.handle('create-microsoft-account', async (event, username) => {
                         expiresIn:       deviceCode.expires_in,
                     });
                 }
+                core.sendLog(null, 'auth',
+                    `🔑 Microsoft sign-in required for "${username}": go to ${deviceCode.verification_uri} and enter code ${deviceCode.user_code} (expires in ${Math.round((deviceCode.expires_in || 900) / 60)} min)`);
+
+                // Hostless.cloud (and any other headless/no-Electron-window host) only
+                // shows this process's stdout in its console. core.mainWindow is
+                // undefined there, and core.sendLog may only reach clients connected
+                // to the ws-bridge — if the dashboard tab isn't open/connected yet,
+                // nothing sees it. This is a plain, unconditional console.log so the
+                // code always lands in Hostless's console regardless of what
+                // sendLog/mainWindow do.
+                console.log('========================================');
+                console.log(`[auth] Microsoft sign-in required for "${username}"`);
+                console.log(`[auth] Open: ${deviceCode.verification_uri}`);
+                console.log(`[auth] Enter code: ${deviceCode.user_code}`);
+                console.log(`[auth] Expires in: ${Math.round((deviceCode.expires_in || 900) / 60)} min`);
+                console.log('========================================');
             });
             auth = await authflow.getMinecraftJavaToken({ fetchProfile: true });
         } catch (authErr) {
-            // Auth failed — restore the previous token and authflow so the
-            // account remains usable and is not lost.
             if (previousToken) {
                 core.storedTokens[username] = previousToken;
-                // No need to re-save to disk; the encrypted file was never modified.
             }
             if (previousAuthflow) {
                 core.authflows.set(username, previousAuthflow);
             }
-            throw authErr; // re-throw so the outer catch returns the error to the UI
+            throw authErr;
         }
 
         core.storedTokens[username] = {
             token:     auth.token,
             profile:   auth.profile,
-            expiresAt: Date.now() + 50 * 60 * 1000,  // 50 min — MS tokens live ~1h
+            expiresAt: Date.now() + 50 * 60 * 1000,
         };
         core.saveStoredTokens();
-        // Keep the live Authflow instance so botConnection can reuse it.
-        // Reusing the same instance preserves the EC key pair that is bound
-        // to the cached XSTS token — creating a new instance would generate a
-        // different key pair, invalidating the cache and forcing a device-code
-        // prompt on every connect.
         core.authflows.set(username, authflow);
 
         const accountData = {
@@ -128,7 +134,7 @@ ipcMain.handle('create-microsoft-account', async (event, username) => {
 // ── Account list ──────────────────────────────────────────────────────────────
 ipcMain.handle('get-authenticated-accounts', () => {
     return Object.entries(core.storedTokens)
-        .filter(([, data]) => data && data.profile)   // skip malformed entries
+        .filter(([, data]) => data && data.profile)
         .map(([identifier, data]) => ({
             identifier,
             username:      data.profile.name  ?? identifier,
@@ -172,7 +178,6 @@ ipcMain.handle('update-account', async (event, botId, updates) => {
 });
 
 ipcMain.handle('delete-account', (event, identifier) => {
-    // Disconnect and clean up any bots that use this account
     core.bots.forEach((bot, botId) => {
         if (bot.accountIdentifier === identifier && core.activeBots.has(botId)) {
             try { core.activeBots.get(botId).quit(); } catch {}
@@ -181,24 +186,19 @@ ipcMain.handle('delete-account', (event, identifier) => {
         }
     });
 
-    // Remove from in-memory accounts list
     const index = core.authenticatedAccounts.findIndex(acc => acc.identifier === identifier);
     if (index !== -1) {
         core.authenticatedAccounts.splice(index, 1);
         core.saveAuthenticatedAccounts();
     }
 
-    // Remove cached token (encrypted store)
     if (core.storedTokens[identifier]) {
         delete core.storedTokens[identifier];
         core.saveStoredTokens();
     }
 
-    // Remove live authflow instance so it can't be reused
     core.authflows.delete(identifier);
 
-    // Delete the prismarine-auth cache directory from disk so the MS token
-    // is fully wiped and a fresh device-code auth is required next time.
     try {
         const cacheDir = path.join(TOKENS_DIR, identifier);
         if (fs.existsSync(cacheDir)) {
@@ -226,7 +226,6 @@ ipcMain.handle('delete-bot', (event, botId) => {
 // ── Connection ────────────────────────────────────────────────────────────────
 ipcMain.handle('connect-bot', async (event, botId) => {
     if (core.activeBots.has(botId)) return { success: false, error: 'Already connected' };
-    // Clear any pending cancel flag so reconnect works normally after a manual connect
     core.reconnectCancelled.delete(botId);
     core.mainWindow?.webContents.send('connection-status', { accountId: botId, status: 'connecting' });
     await createBotConnection(botId);
@@ -234,14 +233,9 @@ ipcMain.handle('connect-bot', async (event, botId) => {
 });
 
 ipcMain.handle('disconnect-bot', async (event, botId) => {
-    // Always set the cancel flag first so any queued scheduleReconnect setTimeout
-    // bails out immediately — even if the bot is currently in a reconnect loop
-    // (status = 'reconnecting') rather than fully connected.
     core.reconnectCancelled.add(botId);
 
     if (!core.activeBots.has(botId)) {
-        // Bot may be in a reconnect-wait loop (not connected but pending).
-        // The cancel flag above is enough — log and report success.
         core.mainWindow?.webContents.send('connection-status', { accountId: botId, status: 'offline' });
         core.sendLog(botId, 'info', 'Reconnect loop cancelled');
         return { success: true };
@@ -258,13 +252,9 @@ ipcMain.handle('disconnect-bot', async (event, botId) => {
 });
 
 // ── Auto-TPA settings ─────────────────────────────────────────────────────────
-// `enabled` is runtime-only (not persisted). Only the players whitelist is saved to disk.
 ipcMain.handle('get-auto-tpa', (event, botId) => {
     const state   = core.botStates.get(botId);
-    // If the bot has live state, use it. If not yet connected, default enabled=true
-    // so the UI shows the correct default before first connection.
     const enabled = state ? (state?.autoTpa?.enabled === true) : true;
-    // Always read players from live state if available, otherwise fall back to disk
     const players = state?.autoTpa?.players ?? loadAutoTpaPlayersForBot(botId);
     const result  = { enabled, players };
     console.log('[AutoTPA] get-auto-tpa botId=' + botId + ' returning=' + JSON.stringify(result));
@@ -276,28 +266,23 @@ ipcMain.handle('set-auto-tpa', (event, botId, settings) => {
     const enabledBool = (settings.enabled === true || settings.enabled === 'true' || settings.enabled === 1);
     const players     = Array.isArray(settings.players) ? settings.players : [];
 
-    // Persist ONLY the players list — enabled is intentionally excluded
     saveAutoTpaPlayersForBot(botId, players);
 
-    // Sync both into live state if bot is connected
     const state = core.botStates.get(botId);
     if (state) state.autoTpa = { enabled: enabledBool, players };
     console.log('[AutoTPA] in-memory state=' + JSON.stringify(state?.autoTpa));
     return { success: true };
 });
 
-// set-auto-tpa-enabled: toggle only — never overwrites the players list
 ipcMain.handle('set-auto-tpa-enabled', (event, botId, enabled) => {
     const enabledBool = (enabled === true || enabled === 'true' || enabled === 1);
     const state = core.botStates.get(botId);
     if (state) {
-        // Preserve existing players, only flip enabled
         state.autoTpa = { enabled: enabledBool, players: state.autoTpa?.players ?? loadAutoTpaPlayersForBot(botId) };
     }
     console.log('[AutoTPA] set-enabled botId=' + botId + ' enabled=' + enabledBool + ' players=' + JSON.stringify(state?.autoTpa?.players));
     return { success: true };
 });
-
 
 // ── Reconnect settings ────────────────────────────────────────────────────────
 ipcMain.handle('set-reconnect-settings', (_event, settings) => {

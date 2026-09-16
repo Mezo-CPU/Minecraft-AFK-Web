@@ -3,7 +3,6 @@
 
 const mineflayer = require('mineflayer');
 const path       = require('path');
-// (electron 'app' import removed — was unused in this file anyway)
 const { Authflow, Titles } = require('prismarine-auth');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
 const { startViewer, stopViewer } = require('./viewer');
@@ -25,17 +24,11 @@ async function createBotConnection(botId) {
     }
 
     // ── Auth: reuse the single persistent Authflow instance ──────────────────
-    // prismarine-auth generates a new EC key pair on every new Authflow() call.
-    // The XSTS token in the cache dir is bound to that key pair, so creating a
-    // second instance with the same cache dir produces a mismatched key and forces
-    // a full device-code re-auth. Fix: create Authflow once (in ipcHandlers) and
-    // reuse the same instance here. If no live instance exists (app restart), we
-    // create a new one pointing at the plain cache directory and call
-    // getMinecraftJavaToken to silently refresh before mineflayer is created.
     const _fs         = require('fs');
-    // Portable auth-cache location under the app's own data/ dir (the original
-    // hardcoded a Windows-only path here, which never worked outside Windows).
-    const _TOKENS_DIR = path.join(__dirname, 'data', 'auth-cache');
+    // Uses the same resolved writable data directory main.js falls back to
+    // (app folder if writable, otherwise /tmp) — was previously hardcoded to
+    // __dirname/data, which broke on hosts where /app isn't writable.
+    const _TOKENS_DIR = path.join(core.DATA_DIR, 'auth-cache');
 
     const authCacheDir       = path.join(_TOKENS_DIR, botConfig.accountIdentifier);
     const identifier         = botConfig.accountIdentifier;
@@ -69,8 +62,6 @@ async function createBotConnection(botId) {
             return null;
         }
     } else {
-        // Live instance exists. If the token is close to expiry, silently refresh
-        // using the same Authflow instance (preserves the EC key pair).
         const needsRefresh = !tokenData.expiresAt ||
             (Date.now() + TOKEN_REFRESH_SKEW) > tokenData.expiresAt;
         if (needsRefresh) {
@@ -123,22 +114,59 @@ botStates.set(botId, {
     connectTime:         Date.now(),
     commandCount:        0,
     statsInterval:       null,
-    tpsInterval:         null,   // NEW
-    tps:                 null,   // NEW — last known TPS from /tps chat parsing
-    chatReady:           false,
+    tpsInterval:         null,
+    tps:                 null,
+    tpsSource:           null,
+    tpsPlugin:           null,
+    tpsPluginTime:       0,
+    tpsEstimated:        null,
+    mspt:                null,
+    _tpsSamples:         [],
+    _lastTickAge:        null,
+    _lastTickWall:       null,
+    chatReady:            false,
 });
 
-        // On 1.19+ servers with enforce-secure-profile, the server sends a
-        // login_packet that initialises the signing session. mineflayer emits
-        // 'session' once that handshake is complete. Sending chat BEFORE this
-        // causes "Chat message validation failure" kicks.
-        //
-        // When the bot is transferred between servers/worlds (e.g. hub → survival),
-        // the server issues a new login packet which resets the signing session.
-        // We must reset chatReady=false and wait for the next 'session' event,
-        // otherwise the bot sends chat with a stale signature and gets kicked.
-        //
-        // Use .on() (not .once()) so this fires on every server transfer.
+        botInstance._client.on('update_time', (packet) => {
+            const state = botStates.get(botId);
+            if (!state) return;
+
+            let age = packet.age;
+            if (typeof age === 'bigint') age = Number(age);
+            else if (age && typeof age === 'object' && 'low' in age) age = age.low >>> 0;
+            if (typeof age !== 'number' || !Number.isFinite(age)) return;
+
+            const now = Date.now();
+
+            if (state._lastTickAge != null && state._lastTickWall != null) {
+                const deltaAge  = age - state._lastTickAge;
+                const deltaWall = now - state._lastTickWall;
+
+                if (deltaAge > 0 && deltaWall > 0) {
+                    const instantTps = Math.min(20, (deltaAge / deltaWall) * 1000);
+
+                    state._tpsSamples.push(instantTps);
+                    if (state._tpsSamples.length > 12) state._tpsSamples.shift();
+
+                    const avg = state._tpsSamples.reduce((a, b) => a + b, 0) / state._tpsSamples.length;
+                    state.tpsEstimated = Math.round(avg * 100) / 100;
+                    state.mspt         = Math.round((deltaWall / deltaAge) * 100) / 100;
+
+                    const pluginFresh = state.tpsPlugin != null && (now - state.tpsPluginTime) < 15000;
+                    if (pluginFresh) {
+                        state.tps       = state.tpsPlugin;
+                        state.tpsSource = 'plugin';
+                    } else {
+                        state.tps       = state.tpsEstimated;
+                        state.tpsSource = 'estimated';
+                    }
+                }
+            }
+
+            state._lastTickAge  = age;
+            state._lastTickWall = now;
+        });
+
         botInstance._client.on('session', () => {
             if (core.activeBots.get(botId) !== botInstance) return;
             const state = botStates.get(botId);
@@ -146,41 +174,28 @@ botStates.set(botId, {
             sendLog(botId, 'info', 'Chat session ready');
         });
 
-        // Reset chatReady whenever the server sends a new login packet.
-        // This happens on server transfers (hub → game server) on BungeeCord /
-        // Velocity networks. The new signing session arrives shortly after via
-        // the 'session' event above.
         botInstance._client.on('login', () => {
             if (core.activeBots.get(botId) !== botInstance) return;
             const state = botStates.get(botId);
             if (state) {
                 state.chatReady = false;
-                // Clear any pending TPA state so the re-sent TPA prompt on the new
-                // server is not auto-accepted with a stale cached requester. Without
-                // this the bot sends /tpaccept before the new chat session is ready,
-                // causing a "Chat message validation failure" kick.
                 state._tpaRequester = null;
                 state._tpaTime      = null;
 
-                // Stop the auto-clicker immediately on every server transfer.
-                // The bot is switching worlds — all tracked entities from the
-                // previous server are now invalid. Any attack packet sent during
-                // the transition causes an "Attempting to attack an invalid entity"
-                // kick. We stop here (not in stopClickersNow) because we want to
-                // save the clicker config for restore, but NOT re-arm the restore
-                // timer again — cancel any already-pending restore timer first.
+                state._lastTickAge  = null;
+                state._lastTickWall = null;
+                state._tpsSamples   = [];
+
                 if (state._clickerRestoreTimer) {
                     clearTimeout(state._clickerRestoreTimer);
                     state._clickerRestoreTimer = null;
                 }
-                // Save clicker config so it can be restored after the new spawn
                 const restoreLeft  = state.clicking?.left  ? { ...state.clicking.left }  : null;
                 const restoreRight = state.clicking?.right ? { ...state.clicking.right } : null;
                 if (restoreLeft || restoreRight) {
                     core._pendingClickerRestore = core._pendingClickerRestore || {};
                     core._pendingClickerRestore[botId] = { left: restoreLeft, right: restoreRight };
                 }
-                // Kill all clicker intervals immediately
                 if (state.clickIntervalLeft)  { clearInterval(state.clickIntervalLeft);  state.clickIntervalLeft  = null; state.clickTokenLeft  = null; }
                 if (state.clickIntervalRight) { clearInterval(state.clickIntervalRight); state.clickIntervalRight = null; state.clickTokenRight = null; }
                 if (state.clickInterval)      { clearInterval(state.clickInterval);      state.clickInterval      = null; }
@@ -188,10 +203,6 @@ botStates.set(botId, {
                 try { botInstance.setControlState('use',    false); } catch {}
 
                 sendLog(botId, 'info', 'Server transfer detected — waiting for new chat session...');
-                // Safety fallback: servers that don't use signed chat (offline mode,
-                // old versions, or Paper with enforce-secure-profile=false) never fire
-                // the 'session' event after a login packet. If chatReady is still false
-                // after 4 seconds, mark it ready so commands/chat aren't permanently blocked.
                 setTimeout(() => {
                     if (core.activeBots.get(botId) !== botInstance) return;
                     const s = botStates.get(botId);
@@ -203,16 +214,10 @@ botStates.set(botId, {
             }
         });
 
-        // Fallback: if the server doesn't use signed chat the 'session' event
-        // never fires, so mark ready after spawn instead.
         botInstance.on('spawn', () => {
             if (core.activeBots.get(botId) !== botInstance) return;
             const state = botStates.get(botId);
             if (state && !state.chatReady) {
-                // Wait 3s so any pending session packet has time to arrive.
-                // 1.19+ servers send the session packet within ~500ms of login,
-                // but some proxies are slow. 3s covers all realistic cases while
-                // still being short enough to not block legitimate commands.
                 setTimeout(() => {
                     if (core.activeBots.get(botId) !== botInstance) return;
                     const s = botStates.get(botId);
@@ -245,7 +250,8 @@ botStates.set(botId, {
             if (state) {
                 // Restore persisted Auto-TPA player whitelist.
                 try {
-                    const _autoTpaFile = path.join(__dirname, 'data', 'autotpa.json');
+                    // Same DATA_DIR fix as the auth-cache path above.
+                    const _autoTpaFile = path.join(core.DATA_DIR, 'autotpa.json');
                     const _raw   = require('fs').readFileSync(_autoTpaFile, 'utf8');
                     const _all   = JSON.parse(_raw);
                     const _players = Array.isArray(_all.players) ? _all.players : [];
@@ -261,24 +267,11 @@ botStates.set(botId, {
                 if (activeBots.has(botId)) sendBotUpdate(botId);
                }, 2000);
 
-               // NEW — poll TPS every 10s via chat, since vanilla doesn't expose TPS to clients directly.
-               // Assumes a plugin like Essentials/Spigot that responds to "/tps" in chat.
-               state.tpsInterval = setInterval(() => {
-               if (!activeBots.has(botId) || !state.chatReady) return;
-                try { botInstance.chat('/tps'); } catch {}
-                }, 10000);
-
-                // Restore auto-clicker if it was running before disconnect.
-                // Use a longer delay so the bot is fully spawned and stable.
-                // We call ipcMain.emit directly which runs the 'execute-command'
-                // handler synchronously — this avoids a second IPC round-trip and
-                // keeps the token/instance check inside commands.js working correctly.
                 const pending = core._pendingClickerRestore?.[botId];
                 if (pending) {
                     delete core._pendingClickerRestore[botId];
                     state._clickerRestoreTimer = setTimeout(() => {
                         state._clickerRestoreTimer = null;
-                        // Confirm this exact instance is still the active one
                         if (core.activeBots.get(botId) !== botInstance) return;
                         const rearmClicker = (side, cfg) => {
                             if (!cfg) return;
@@ -289,7 +282,7 @@ botStates.set(botId, {
                         };
                         if (pending.left)  rearmClicker('left',  pending.left);
                         if (pending.right) rearmClicker('right', pending.right);
-                    }, 5000); // 5s — enough time to fully spawn and settle after reconnect
+                    }, 5000);
                 }
             }
 
@@ -313,7 +306,6 @@ botStates.set(botId, {
         botInstance.on('death', () => {
             sendLog(botId, 'warning', '💀 Bot died!');
             core.mainWindow?.webContents.send('bot-death', { accountId: botId });
-            // Auto-respawn
             const _bs = core.botBehaviourSettings;
             if (_bs?.autorespawn) {
                 setTimeout(() => { try { botInstance.respawn(); } catch {} }, 1200);
@@ -346,10 +338,7 @@ botStates.set(botId, {
             botInstance.once('spawn', _startAntiAfk);
         }
 
-
         // ── Auto-Eat ──────────────────────────────────────────────────────────
-        // Guard flag so we don't queue multiple simultaneous consume() calls
-        // if 'health' fires several times before the eating animation finishes.
         let _autoEatBusy = false;
         botInstance.on('health', () => {
             const bs = core.botBehaviourSettings;
@@ -357,22 +346,14 @@ botStates.set(botId, {
             if (_autoEatBusy) return;
             const threshold = bs.autoeatThreshold ?? 14;
             if (botInstance.food > threshold) return;
-            // Find a food item in hotbar slots (36-44 in window slots = 0-8 hotbar).
-            // minecraft-data identifies food items by the presence of `foodPoints`
-            // (some versions) or `saturation` on the item definition — NOT a boolean
-            // `food` property. We also accept items whose name contains common food
-            // keywords as a fallback for versions where registry data is incomplete.
             const slots = botInstance.inventory?.slots || [];
             const registry = botInstance.registry;
             const isFoodItem = (item) => {
                 if (!item) return false;
-                // Primary: check minecraft-data registry
                 const def = registry?.itemsByName?.[item.name] ?? registry?.itemsByName?.[item.name.replace('minecraft:', '')];
                 if (def) {
-                    // minecraft-data 3.x uses `foodPoints`, older versions use `food`
                     if (def.foodPoints !== undefined || def.food !== undefined || def.saturation !== undefined) return true;
                 }
-                // Fallback: name-based heuristic for items the registry misses
                 const name = (item.name || '').toLowerCase().replace('minecraft:', '');
                 const foodNames = [
                     'bread','apple','beef','porkchop','chicken','mutton','rabbit','salmon',
@@ -395,7 +376,6 @@ botStates.set(botId, {
                     botInstance.setQuickBarSlot(hotbarSlot);
                     setTimeout(() => {
                         try { botInstance.consume(); } catch {}
-                        // Release busy flag after eating animation (~1.6s)
                         setTimeout(() => { _autoEatBusy = false; }, 1800);
                     }, 200);
                 } catch {
@@ -415,26 +395,14 @@ botStates.set(botId, {
             }
         });
 
-        // ── Stop auto-clicker if its target entity dies or despawns ──────────
-        // Proactively delete the entity from bot.entities the moment it dies.
-        // This closes the race window between the server removing the entity and
-        // the next clicker tick firing — mineflayer keeps the stale object in
-        // bot.entities for up to ~1 tick after the death packet, which is enough
-        // to cause an "Attempting to attack an invalid entity" kick at mob farms
-        // (endermen, blazes) where many mobs die near-simultaneously.
         botInstance.on('entityDead', entity => {
             if (!entity) return;
-            // Mark health as 0 so isValidAttackTarget rejects it immediately,
-            // even if mineflayer hasn't yet deleted it from bot.entities.
             try { entity.health = 0; } catch {}
-            // Also remove from the tracked map so the id-existence check fails.
             try { delete botInstance.entities[entity.id]; } catch {}
         });
 
         botInstance.on('entityGone', entity => {
-            // entityGone fires when mineflayer removes an entity from tracking.
-            // isValidAttackTarget in commands.js guards every attack() call, so
-            // no action needed here — entityDead above already handled cleanup.
+            // no-op — entityDead above already handled cleanup
         });
 
         botInstance.on('windowOpen', openedWindow => {
@@ -456,7 +424,6 @@ botStates.set(botId, {
                 buildAndSend();
                 sendLog(botId, 'info', `Container opened | slotCount=${openedWindow.slots.length} | type=${openedWindow.type}`);
 
-                // Re-broadcast when slots update (items arrive after windowOpen)
                 const onWindowUpdate = (win) => { if (win === openedWindow) buildAndSend(); };
                 botInstance.on('windowUpdate', onWindowUpdate);
                 botInstance.once('windowClose', () => botInstance.removeListener('windowUpdate', onWindowUpdate));
@@ -471,19 +438,17 @@ botStates.set(botId, {
         });
 
         // ── Chat receiving ────────────────────────────────────────────────────
-        // In 1.19+, mineflayer's bot.on('message') only fires for system_chat
-        // packets (server messages). Player chat arrives in a separate
-        // playerChat packet that mineflayer does NOT forward to 'message'.
-        // We handle both here with a shared processor.
 function handleChatText(text) {
     sendLog(botId, 'chat', text);
 
     const state = botStates.get(botId);
 
-    // Parse TPS out of the /tps command response (Spigot/Paper/Essentials format)
     const tpsMatch = /TPS[^0-9]*([0-9]+(?:\.[0-9]+)?)/i.exec(text);
     if (tpsMatch && state) {
-        state.tps = parseFloat(tpsMatch[1]);
+        state.tpsPlugin     = parseFloat(tpsMatch[1]);
+        state.tpsPluginTime = Date.now();
+        state.tps           = state.tpsPlugin;
+        state.tpsSource      = 'plugin';
     }
 
     // ── Auto-TPA ──────────────────────────────────────────────────────
@@ -524,29 +489,17 @@ function handleChatText(text) {
             }
         }
 
-        // 'messagestr' fires for ALL chat in mineflayer 4.x on 1.19+:
-        // both system_chat (server messages) and player_chat (player messages).
-        // Using this instead of 'message' + raw _client listener avoids
-        // conflicts with mineflayer's own signed-chat pipeline.
         botInstance.on('messagestr', (text) => handleChatText(text));
 
-        // Immediately kill all clicker intervals the moment this specific instance
-        // loses its connection. This runs BEFORE cleanupBot so no in-flight interval
-        // tick can fire an attack packet on a dead/invalid entity after the kick.
-        // Clicker settings are saved to core._pendingClickerRestore so they can be
-        // re-armed after a successful reconnect.
         function stopClickersNow() {
             const state = botStates.get(botId);
             if (!state) return;
 
-            // Cancel any pending clicker-restore timer so it doesn't re-arm
-            // the clicker on a bot that has been kicked or disconnected.
             if (state._clickerRestoreTimer) {
                 clearTimeout(state._clickerRestoreTimer);
                 state._clickerRestoreTimer = null;
             }
 
-            // Save active clicker config for restore after reconnect
             const restoreLeft  = state.clicking?.left  ? { ...state.clicking.left }  : null;
             const restoreRight = state.clicking?.right ? { ...state.clicking.right } : null;
             if (restoreLeft || restoreRight) {
@@ -562,10 +515,6 @@ function handleChatText(text) {
         }
 
         // ── Reconnect helper ──────────────────────────────────────────────────
-        // Called after kicked or end. Schedules a createBotConnection retry
-        // if auto-reconnect is enabled in settings.
-        // kickReason: optional string — detected to give longer delay on
-        // "already connected" kicks where the old session hasn't cleared yet.
         function scheduleReconnect(attempt = 1, kickReason = '') {
             const rs = core.reconnectSettings;
             if (!rs.enabled) return;
@@ -573,15 +522,12 @@ function handleChatText(text) {
                 sendLog(botId, 'error', `[Reconnect] Giving up after ${rs.maxTries} attempt(s)`);
                 return;
             }
-            // If the user manually disconnected (/disconnect), honour that and stop.
             if (core.reconnectCancelled.has(botId)) {
                 core.reconnectCancelled.delete(botId);
                 sendLog(botId, 'info', '[Reconnect] Cancelled by user — not reconnecting');
                 return;
             }
 
-            // "Already connected" means the old TCP session hasn't fully closed
-            // server-side yet. Use a longer delay so the server can clear it.
             const alreadyConnected = /already connected/i.test(kickReason);
             const delayMs = alreadyConnected ? Math.max(15000, rs.delayMs * 3) : rs.delayMs;
             if (alreadyConnected) {
@@ -593,20 +539,17 @@ function handleChatText(text) {
             core.mainWindow?.webContents.send('connection-status', { accountId: botId, status: 'reconnecting' });
 
             setTimeout(async () => {
-                // Abort if the user disconnected while we were waiting in the delay.
                 if (core.reconnectCancelled.has(botId)) {
                     core.reconnectCancelled.delete(botId);
                     sendLog(botId, 'info', '[Reconnect] Cancelled by user — not reconnecting');
                     core.mainWindow?.webContents.send('connection-status', { accountId: botId, status: 'offline' });
                     return;
                 }
-                // Abort if already reconnected manually, or bot config deleted
                 if (core.activeBots.has(botId)) return;
                 if (!core.bots[botId]) return;
                 sendLog(botId, 'info', `[Reconnect] Connecting…${label}`);
                 const newBot = await createBotConnection(botId);
                 if (!newBot) {
-                    // Connection failed — try again
                     scheduleReconnect(attempt + 1);
                 }
             }, delayMs);
@@ -619,15 +562,12 @@ function handleChatText(text) {
             let reasonText;
             try {
                 const parsed = typeof reason === 'string' ? JSON.parse(reason) : reason;
-                // Recursively extract all text values from NBT-style compound or plain chat JSON
                 function extractText(node) {
                     if (!node || typeof node !== 'object') return String(node ?? '');
-                    // NBT compound: { type: 'string', value: '...' }
                     if (node.type === 'string') return node.value ?? '';
                     if (node.type === 'byte')   return '';
                     if (node.type === 'compound') return extractText(node.value);
                     if (node.type === 'list')    return extractText(node.value);
-                    // Plain chat JSON: { text: '...', extra: [...] }
                     let out = node.text?.value ?? node.text ?? '';
                     if (node.extra) {
                         const items = node.extra?.value?.value ?? node.extra?.value ?? node.extra ?? [];
@@ -644,9 +584,6 @@ function handleChatText(text) {
             sendLog(botId, 'error', `Kicked: ${reasonText}`);
             cleanupBot(botId);
             core.mainWindow?.webContents.send('connection-status', { accountId: botId, status: 'offline' });
-            // Fatal auth kick — clear the stale live authflow so the next connect
-            // attempt builds a fresh one, but keep the stored token so the account
-            // is not lost. The user can manually delete the account if needed.
             if (/profile not found/i.test(reasonText) || /does the account own minecraft/i.test(reasonText)) {
                 core.authflows.delete(identifier);
                 sendLog(botId, 'warning', '🔑 Auth error — the Minecraft profile could not be verified.');
@@ -657,20 +594,12 @@ function handleChatText(text) {
             scheduleReconnect(1, reasonText);
         });
 
-        // ── Fatal auth errors — do not reconnect ─────────────────────────────
-        // "Profile not found" means Mojang's session server rejected the auth token.
-        // This is a permanent failure until the token is refreshed. Retrying in a
-        // loop is pointless and just hammers the auth servers.
-        // We detect it on the 'error' event (thrown by yggdrasil during the session
-        // join handshake) AND on 'end' in case the error surfaces there instead.
         let _fatalAuthError = false;
 
         botInstance.on('error', err => {
             const msg = err.message || '';
             if (/profile not found/i.test(msg) || /does the account own minecraft/i.test(msg)) {
                 _fatalAuthError = true;
-                // Clear the stale live authflow so the next manual connect builds a
-                // fresh one, but keep the stored token — tokens are never auto-deleted.
                 core.authflows.delete(identifier);
                 sendLog(botId, 'error', `❌ Auth error: ${msg}`);
                 sendLog(botId, 'warning', "🔑 The Minecraft profile could not be found on Mojang's servers.");
@@ -688,8 +617,6 @@ function handleChatText(text) {
             sendLog(botId, 'warning', 'Disconnected');
             cleanupBot(botId);
             core.mainWindow?.webContents.send('connection-status', { accountId: botId, status: 'offline' });
-            // Don't reconnect on fatal auth errors — the token is invalid and
-            // retrying will just loop forever with the same rejection.
             if (_fatalAuthError) {
                 sendLog(botId, 'error', '[Reconnect] Skipping reconnect — fatal auth error, re-authentication required.');
                 return;
