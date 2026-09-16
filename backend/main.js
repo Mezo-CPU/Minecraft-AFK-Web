@@ -258,6 +258,7 @@ function cleanupBot(botId) {
     try { require('./viewer').stopViewer(botId); } catch {}
     botStates.delete(botId);
     activeBots.delete(botId);
+}
 
 // ── Load sub-modules ──────────────────────────────────────────────────────────
 require('./botConnection');
