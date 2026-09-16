@@ -6,6 +6,7 @@ const path       = require('path');
 // (electron 'app' import removed — was unused in this file anyway)
 const { Authflow, Titles } = require('prismarine-auth');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
+const { startViewer, stopViewer } = require('./viewer');
 
 const core = require('./main');
 
@@ -221,6 +222,18 @@ botStates.set(botId, {
                     }
                 }, 3000);
             }
+        });
+
+        // ── World Viewer (prismarine-viewer) ─────────────────────────────────
+        // Start a few seconds after spawn so the world has time to load in
+        // around the bot before the viewer starts rendering it. Only ever
+        // starts once per connection (guarded by the botId===botInstance
+        // check + startViewer's own "already running" guard).
+        botInstance.once('spawn', () => {
+            setTimeout(() => {
+                if (core.activeBots.get(botId) !== botInstance) return;
+                startViewer(botId, botInstance);
+            }, 3000);
         });
 
         // ── Event handlers ────────────────────────────────────────────────────
@@ -602,6 +615,7 @@ function handleChatText(text) {
         botInstance.on('kicked', reason => {
             if (core.activeBots.get(botId) !== botInstance) return;
             stopClickersNow();
+            stopViewer(botId);
             let reasonText;
             try {
                 const parsed = typeof reason === 'string' ? JSON.parse(reason) : reason;
@@ -670,6 +684,7 @@ function handleChatText(text) {
         botInstance.on('end', () => {
             if (core.activeBots.get(botId) !== botInstance) return;
             stopClickersNow();
+            stopViewer(botId);
             sendLog(botId, 'warning', 'Disconnected');
             cleanupBot(botId);
             core.mainWindow?.webContents.send('connection-status', { accountId: botId, status: 'offline' });

@@ -231,6 +231,11 @@ function cleanupBot(botId) {
     // Safety net: catches manual-disconnect paths (ipcHandlers.js) that call
     // cleanupBot() directly without going through the 'kicked'/'end' handlers
     // in botConnection.js, which already stop the viewer on their own.
+    // require() is used inline (rather than a top-level import) because
+    // viewer.js itself requires this file — importing it at the top of
+    // main.js would create a circular require that resolves before this
+    // module's exports are fully set up.
+    try { require('./viewer').stopViewer(botId); } catch {}
     botStates.delete(botId);
     activeBots.delete(botId);
 }

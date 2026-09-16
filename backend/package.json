@@ -10,6 +10,7 @@
     "mineflayer": "^4.33.0",
     "mineflayer-pathfinder": "^2.4.5",
     "prismarine-auth": "^2.7.0",
+    "prismarine-viewer": "^1.33.0",
     "ws": "^8.18.0"
   }
 }
