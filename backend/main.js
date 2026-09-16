@@ -247,7 +247,6 @@ function cleanupBot(botId) {
         ['followInterval', 'statsInterval', 'clickInterval', 'clickIntervalLeft', 'clickIntervalRight', 'antiAfkTimer', 'tpsInterval'].forEach(k => {
             if (state[k]) { clearInterval(state[k]); state[k] = null; }
         });
-<<<<<<< HEAD
     }
     // Safety net: catches manual-disconnect paths (ipcHandlers.js) that call
     // cleanupBot() directly without going through the 'kicked'/'end' handlers
@@ -258,12 +257,7 @@ function cleanupBot(botId) {
     // module's exports are fully set up.
     try { require('./viewer').stopViewer(botId); } catch {}
     botStates.delete(botId);
-=======
-    }    
-	botStates.delete(botId);
->>>>>>> ede9e67e78fc29173c304c68ff67294b5be7e0fe
     activeBots.delete(botId);
-}
 
 // ── Load sub-modules ──────────────────────────────────────────────────────────
 require('./botConnection');
