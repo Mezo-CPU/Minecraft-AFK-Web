@@ -60,6 +60,14 @@ ipcMain.handle('create-microsoft-account', async (event, username) => {
                 // webContents-forwarding channel (which the web UI's ms-auth-code
                 // listener may not exist for), AND to sendLog, which the web
                 // dashboard is already known to render live.
+                //
+                // NOTE: accountId is `null` here, not `username` — renderer.js's
+                // onLog filter only shows a log line when
+                // `data.accountId === null || data.accountId === activeBotId`.
+                // This message isn't tied to any bot index, so it must be
+                // `null` to pass that filter and actually render (previously
+                // it used `username`, a string that never matched either
+                // condition, so the line was silently dropped).
                 if (core.mainWindow) {
                     core.mainWindow.webContents.send('ms-auth-code', {
                         identifier:      username,
@@ -69,7 +77,7 @@ ipcMain.handle('create-microsoft-account', async (event, username) => {
                         expiresIn:       deviceCode.expires_in,
                     });
                 }
-                core.sendLog(username, 'auth',
+                core.sendLog(null, 'auth',
                     `🔑 Microsoft sign-in required for "${username}": go to ${deviceCode.verification_uri} and enter code ${deviceCode.user_code} (expires in ${Math.round((deviceCode.expires_in || 900) / 60)} min)`);
             });
             auth = await authflow.getMinecraftJavaToken({ fetchProfile: true });
